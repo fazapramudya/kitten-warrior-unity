@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Kitten Warrior — 3D Web Prototype (Valheim Style)</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #12100e;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+    }
+    #game-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    /* HUD Overlay */
+    #hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 24px;
+    }
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      width: 100%;
+    }
+    /* Player Status Card */
+    .player-card {
+      background: rgba(22, 18, 14, 0.85);
+      border: 2px solid #8c6f45;
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 0 12px rgba(140,111,69,0.3);
+      backdrop-filter: blur(8px);
+    }
+    .cat-avatar {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #d4a373, #8c6f45);
+      border: 2px solid #ffdd99;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .bars-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 220px;
+    }
+    .bar-row {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .bar-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+      color: #dfd7cc;
+    }
+    .bar-track {
+      width: 100%;
+      height: 12px;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid #4a3b2c;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bar-fill {
+      height: 100%;
+      width: 100%;
+      border-radius: 5px;
+      transition: width 0.1s ease-out;
+    }
+    .hp-fill {
+      background: linear-gradient(90deg, #c92a2a, #ff6b6b);
+      box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+    }
+    .stamina-fill {
+      background: linear-gradient(90deg, #d97706, #facc15);
+      box-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
+    }
+    .stamina-exhausted {
+      animation: pulse-exhausted 0.4s infinite alternate;
+    }
+    @keyframes pulse-exhausted {
+      from { opacity: 0.4; }
+      to { opacity: 1.0; }
+    }
+    /* Stats & Kill Counter */
+    .stats-card {
+      background: rgba(22, 18, 14, 0.85);
+      border: 2px solid #8c6f45;
+      border-radius: 12px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffdd99;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      backdrop-filter: blur(8px);
+    }
+    .kill-icon {
+      font-size: 24px;
+    }
+    /* Center Crosshair */
+    .crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 8px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(0, 0, 0, 0.8);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    /* Bottom Controls Help */
+    .hud-bottom {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+    .controls-banner {
+      background: rgba(18, 14, 10, 0.75);
+      border: 1px solid rgba(140, 111, 69, 0.4);
+      border-radius: 30px;
+      padding: 8px 24px;
+      display: flex;
+      gap: 18px;
+      font-size: 13px;
+      color: #dfd7cc;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    .key-badge {
+      background: #3e3223;
+      border: 1px solid #735a39;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+      color: #ffdd99;
+      margin-right: 4px;
+    }
+    /* Floating Damage Numbers */
+    .damage-popup {
+      position: absolute;
+      font-weight: 900;
+      font-size: 20px;
+      color: #ff4d4d;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.9), 0 0 8px #ff0000;
+      pointer-events: none;
+      animation: float-up 0.8s forwards ease-out;
+    }
+    @keyframes float-up {
+      0% { opacity: 1; transform: translate(-50%, 0) scale(1.2); }
+      50% { transform: translate(-50%, -24px) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -48px) scale(0.8); }
+    }
+    /* Start / Click to Play Overlay */
+    #click-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 8, 6, 0.7);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 100;
+      transition: opacity 0.25s ease;
+      backdrop-filter: blur(4px);
+    }
+    #click-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .start-box {
+      background: linear-gradient(180deg, #2b2014, #18120b);
+      border: 3px solid #b89155;
+      padding: 36px 48px;
+      border-radius: 16px;
+      text-align: center;
+      box-shadow: 0 16px 64px rgba(0,0,0,0.8), 0 0 32px rgba(184,145,85,0.4);
+      max-width: 520px;
+    }
+    .game-title {
+      font-size: 38px;
+      font-weight: 900;
+      color: #ffdd99;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-shadow: 0 4px 12px rgba(0,0,0,0.8);
+      margin-bottom: 8px;
+    }
+    .game-subtitle {
+      font-size: 15px;
+      color: #d1b894;
+      font-style: italic;
+      margin-bottom: 24px;
+    }
+    .start-btn {
+      background: linear-gradient(180deg, #d49f43, #8a5a17);
+      border: 2px solid #ffe6a3;
+      padding: 14px 36px;
+      border-radius: 30px;
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .start-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 26px rgba(212,159,67,0.6);
+    }
+  </style>
+  <script src="three.min.js"></script>
+  <script>
+    if (typeof THREE === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+    }
+  </script>
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+
+  <div id="hud">
+    <div class="hud-top">
+      <div class="player-card">
+        <div class="cat-avatar">🐱</div>
+        <div class="bars-container">
+          <div class="bar-row">
+            <div class="bar-label">
+              <span>HP</span>
+              <span id="hp-text">100 / 100</span>
+            </div>
+            <div class="bar-track">
+              <div id="hp-bar" class="bar-fill hp-fill" style="width: 100%;"></div>
+            </div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">
+              <span id="stamina-title">Stamina (Valheim)</span>
+              <span id="stamina-text">100 / 100</span>
+            </div>
+            <div class="bar-track">
+              <div id="stamina-bar" class="bar-fill stamina-fill" style="width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-card">
+        <span class="kill-icon">⚔️</span>
+        <span>KILLS: <span id="kill-count">0</span></span>
+      </div>
+    </div>
+
+    <div class="crosshair"></div>
+
+    <div class="hud-bottom">
+      <div class="controls-banner">
+        <div><span class="key-badge">WASD</span> Gerak</div>
+        <div><span class="key-badge">Shift</span> Sprint</div>
+        <div><span class="key-badge">Spasi</span> Lompat</div>
+        <div><span class="key-badge">Klik Kiri</span> Serang (Pedang)</div>
+        <div><span class="key-badge">Mouse</span> Putar Kamera 360°</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="click-overlay">
+    <div class="start-box">
+      <div class="game-title">⚔️ Kitten Warrior 🐾</div>
+      <div class="game-subtitle">3D Valheim-Style Action RPG — Playable Prototype</div>
+      <p style="font-size: 14px; color: #eeddc5; line-height: 1.6; margin-bottom: 24px;">
+        Kendalikan anak kucing berhelm ksatria, ayunkan pedang kecilmu, kelola stamina dengan cermat, dan kalahkan Forest Slimes di hutan berkabut emas!
+      </p>
+      <button class="start-btn">Mulai Bermain (Lock Mouse)</button>
+    </div>
+  </div>
+
+  <div id="popups-container" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
+
+  <script>
+    /* =========================================================================
+       AUDIO SYNTHESIZER (Web Audio API — Zero External Assets)
+       ========================================================================= */
+    const Sound = (() => {
+      let ctx = null;
+      const init = () => {
+        if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+      };
+
+      const playSwordWhoosh = () => {
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(380, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.16);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.16);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.16);
+      };
+
+      const playHitSound = () => {
+        if (!ctx) return;
+        // Punchy blade thud + metal resonance
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(45, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.4, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12);
+      };
+
+      const playSlimePop = () => {
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(700, ctx.currentTime + 0.08);
+        osc.frequency.exponentialRampToValueAtTime(90, ctx.currentTime + 0.22);
+        gain.gain.setValueAtTime(0.35, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.22);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.22);
+      };
+
+      const playJump = () => {
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(140, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(280, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.18, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.15);
+      };
+
+      return { init, playSwordWhoosh, playHitSound, playSlimePop, playJump };
+    })();
+
+    /* =========================================================================
+       GAME ENGINE & SCENE SETUP
+       ========================================================================= */
+    const canvas = document.getElementById('game-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const scene = new THREE.Scene();
+    // Valheim atmospheric golden-hour fog & background
+    const FOG_COLOR = 0xe0ab70;
+    scene.background = new THREE.Color(FOG_COLOR);
+    scene.fog = new THREE.FogExp2(FOG_COLOR, 0.018);
+
+    const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 400);
+
+    // Resize Handler
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    /* =========================================================================
+       LIGHTING (Golden-Hour & Ambient)
+       ========================================================================= */
+    const hemiLight = new THREE.HemisphereLight(0xffecd2, 0x5b4632, 0.95);
+    scene.add(hemiLight);
+
+    const sunLight = new THREE.DirectionalLight(0xffbe76, 1.4);
+    sunLight.position.set(45, 55, 35);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 0.5;
+    sunLight.shadow.camera.far = 180;
+    const d = 35;
+    sunLight.shadow.camera.left = -d;
+    sunLight.shadow.camera.right = d;
+    sunLight.shadow.camera.top = d;
+    sunLight.shadow.camera.bottom = -d;
+    sunLight.shadow.bias = -0.0005;
+    scene.add(sunLight);
+
+    /* =========================================================================
+       ENVIRONMENT (Grass Terrain, Trees, Rocks, Ruins)
+       ========================================================================= */
+    // Ground
+    const groundGeo = new THREE.PlaneGeometry(240, 240, 40, 40);
+    // Subtle vertex elevation
+    const posAttr = groundGeo.attributes.position;
+    for (let i = 0; i < posAttr.count; i++) {
+      const vx = posAttr.getX(i);
+      const vy = posAttr.getY(i);
+      posAttr.setZ(i, Math.sin(vx * 0.06) * Math.cos(vy * 0.06) * 0.7);
+    }
+    groundGeo.computeVertexNormals();
+
+    const groundMat = new THREE.MeshStandardMaterial({
+      color: 0x475f32,
+      roughness: 0.85,
+      metalness: 0.05
+    });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // Low-poly Pine Tree Generator
+    const treeGroup = new THREE.Group();
+    const trunkGeo = new THREE.CylinderGeometry(0.2, 0.4, 2.5, 6);
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3d2b1f, roughness: 0.9 });
+    const foliageMat = new THREE.MeshStandardMaterial({ color: 0x22421f, roughness: 0.8, flatShading: true });
+
+    for (let i = 0; i < 70; i++) {
+      const tx = (Math.random() - 0.5) * 190;
+      const tz = (Math.random() - 0.5) * 190;
+      if (Math.hypot(tx, tz) < 9) continue; // Clear spawn zone
+
+      const tree = new THREE.Group();
+      const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+      trunk.position.y = 1.25;
+      trunk.castShadow = true;
+      trunk.receiveShadow = true;
+      tree.add(trunk);
+
+      const f1 = new THREE.Mesh(new THREE.ConeGeometry(2.0, 3.2, 6), foliageMat);
+      f1.position.y = 2.8;
+      f1.castShadow = true;
+      tree.add(f1);
+
+      const f2 = new THREE.Mesh(new THREE.ConeGeometry(1.5, 2.6, 6), foliageMat);
+      f2.position.y = 4.2;
+      f2.castShadow = true;
+      tree.add(f2);
+
+      const f3 = new THREE.Mesh(new THREE.ConeGeometry(0.9, 1.8, 6), foliageMat);
+      f3.position.y = 5.4;
+      f3.castShadow = true;
+      tree.add(f3);
+
+      const scale = 0.7 + Math.random() * 0.6;
+      tree.scale.set(scale, scale, scale);
+      tree.position.set(tx, 0, tz);
+      treeGroup.add(tree);
+    }
+    scene.add(treeGroup);
+
+    // Stylized Boulders / Rocks
+    const rockGeo = new THREE.DodecahedronGeometry(1.2, 1);
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x5a574f, roughness: 0.9, flatShading: true });
+    for (let i = 0; i < 35; i++) {
+      const rx = (Math.random() - 0.5) * 170;
+      const rz = (Math.random() - 0.5) * 170;
+      if (Math.hypot(rx, rz) < 8) continue;
+      const rock = new THREE.Mesh(rockGeo, rockMat);
+      const s = 0.6 + Math.random() * 1.4;
+      rock.scale.set(s, s * 0.7, s);
+      rock.position.set(rx, s * 0.4, rz);
+      rock.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+      rock.castShadow = true;
+      rock.receiveShadow = true;
+      scene.add(rock);
+    }
+
+    // Ancient Ruin Stone Pillars (Valheim Vibe)
+    const pillarGeo = new THREE.CylinderGeometry(0.7, 0.8, 5, 7);
+    const pillarMat = new THREE.MeshStandardMaterial({ color: 0x6e685f, roughness: 0.95, flatShading: true });
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2;
+      const px = Math.cos(angle) * 18;
+      const pz = Math.sin(angle) * 18;
+      const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+      pillar.position.set(px, 2.5, pz);
+      pillar.rotation.y = Math.random() * Math.PI;
+      pillar.castShadow = true;
+      scene.add(pillar);
+    }
+
+    /* =========================================================================
+       PROCEDURAL KITTEN WARRIOR 3D MODEL
+       ========================================================================= */
+    const playerGroup = new THREE.Group();
+    scene.add(playerGroup);
+
+    // Materials
+    const furMat = new THREE.MeshStandardMaterial({ color: 0xdf8c42, roughness: 0.7 }); // Orange Ginger Cat
+    const whiteFurMat = new THREE.MeshStandardMaterial({ color: 0xfbf4eb, roughness: 0.7 });
+    const earInnerMat = new THREE.MeshStandardMaterial({ color: 0xf49da9, roughness: 0.8 });
+    const armorSteelMat = new THREE.MeshStandardMaterial({ color: 0x8a939e, metalness: 0.85, roughness: 0.25 });
+    const goldAccentMat = new THREE.MeshStandardMaterial({ color: 0xf5b041, metalness: 0.9, roughness: 0.2 });
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+
+    // 1. Cat Body (Stout, cute capsule-like)
+    const bodyMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.46, 0.9, 10), furMat);
+    bodyMesh.position.y = 0.75;
+    bodyMesh.rotation.x = 0.15;
+    bodyMesh.castShadow = true;
+    playerGroup.add(bodyMesh);
+
+    // Chest White Patch
+    const chestPatch = new THREE.Mesh(new THREE.SphereGeometry(0.38, 8, 8), whiteFurMat);
+    chestPatch.position.set(0, 0.8, 0.25);
+    chestPatch.scale.set(0.9, 1.1, 0.4);
+    playerGroup.add(chestPatch);
+
+    // 2. Knight Chest Armor (Small cuirass)
+    const armorPlate = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.49, 0.45, 10), armorSteelMat);
+    armorPlate.position.set(0, 0.75, 0);
+    armorPlate.castShadow = true;
+    playerGroup.add(armorPlate);
+
+    // 3. Cat Head
+    const headGroup = new THREE.Group();
+    headGroup.position.set(0, 1.35, 0.12);
+
+    const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 10), furMat);
+    headMesh.castShadow = true;
+    headGroup.add(headMesh);
+
+    // Muzzle & Whiskers
+    const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), whiteFurMat);
+    muzzle.position.set(0, -0.1, 0.35);
+    muzzle.scale.set(1.1, 0.75, 0.8);
+    headGroup.add(muzzle);
+
+    // Nose
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), earInnerMat);
+    nose.position.set(0, -0.04, 0.48);
+    headGroup.add(nose);
+
+    // Eyes
+    const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), eyeMat);
+    eyeR.position.set(0.18, 0.08, 0.38);
+    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), eyeMat);
+    eyeL.position.set(-0.18, 0.08, 0.38);
+    headGroup.add(eyeR);
+    headGroup.add(eyeL);
+
+    // Cat Ears
+    const earGeo = new THREE.ConeGeometry(0.18, 0.32, 4);
+    const earR = new THREE.Mesh(earGeo, furMat);
+    earR.position.set(0.28, 0.42, 0);
+    earR.rotation.set(-0.1, 0, -0.35);
+    headGroup.add(earR);
+
+    const earL = new THREE.Mesh(earGeo, furMat);
+    earL.position.set(-0.28, 0.42, 0);
+    earL.rotation.set(-0.1, 0, 0.35);
+    headGroup.add(earL);
+
+    // 4. Knight Helm & Plume (Mounted on head)
+    const helmGeo = new THREE.SphereGeometry(0.48, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.58);
+    const helm = new THREE.Mesh(helmGeo, armorSteelMat);
+    helm.position.set(0, 0.06, 0);
+    helm.castShadow = true;
+    headGroup.add(helm);
+
+    // Gold Plume Crest on top
+    const plume = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.32, 0.45), new THREE.MeshStandardMaterial({ color: 0xcc2222, roughness: 0.6 }));
+    plume.position.set(0, 0.52, -0.05);
+    plume.rotation.x = -0.3;
+    headGroup.add(plume);
+
+    playerGroup.add(headGroup);
+
+    // 5. Cute Tail
+    const tailGroup = new THREE.Group();
+    tailGroup.position.set(0, 0.5, -0.4);
+    const tailMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.06, 0.7, 8), furMat);
+    tailMesh.position.set(0, 0.28, -0.15);
+    tailMesh.rotation.x = -0.8;
+    tailGroup.add(tailMesh);
+    playerGroup.add(tailGroup);
+
+    // 6. Knight Sword & Shield Sockets
+    const rightArmSocket = new THREE.Group();
+    rightArmSocket.position.set(0.55, 0.8, 0.15);
+
+    // Sword Assembly
+    const swordGroup = new THREE.Group();
+    const bladeMesh = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.85, 0.04), armorSteelMat);
+    bladeMesh.position.y = 0.5;
+    bladeMesh.castShadow = true;
+    swordGroup.add(bladeMesh);
+
+    const crossguard = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.06, 0.08), goldAccentMat);
+    crossguard.position.y = 0.1;
+    swordGroup.add(crossguard);
+
+    const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.22, 6), new THREE.MeshStandardMaterial({ color: 0x4a2c11 }));
+    hilt.position.y = -0.04;
+    swordGroup.add(hilt);
+
+    swordGroup.rotation.x = Math.PI / 4;
+    rightArmSocket.add(swordGroup);
+    playerGroup.add(rightArmSocket);
+
+    // Shield on Left Arm
+    const leftArmSocket = new THREE.Group();
+    leftArmSocket.position.set(-0.55, 0.8, 0.15);
+    const shield = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.06, 12), new THREE.MeshStandardMaterial({ color: 0x3d4b66, metalness: 0.5, roughness: 0.4 }));
+    shield.rotation.z = Math.PI / 2;
+    leftArmSocket.add(shield);
+    playerGroup.add(leftArmSocket);
+
+    // Sword Swing Slash Arc Mesh
+    const slashArcGeo = new THREE.RingGeometry(0.8, 1.4, 16, 1, 0, Math.PI * 0.8);
+    const slashArcMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0,
+      side: THREE.DoubleSide
+    });
+    const slashArc = new THREE.Mesh(slashArcGeo, slashArcMat);
+    slashArc.rotation.x = -Math.PI / 2;
+    slashArc.position.set(0, 0.8, 0.7);
+    playerGroup.add(slashArc);
+
+    /* =========================================================================
+       FOREST SLIME ENEMY SYSTEM
+       ========================================================================= */
+    const slimes = [];
+    const slimeMat = new THREE.MeshStandardMaterial({
+      color: 0x2ec4b6, // Emerald / Lime gelatinous
+      roughness: 0.25,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.88,
+      flatShading: true
+    });
+    const slimeHurtMat = new THREE.MeshBasicMaterial({ color: 0xff3333 });
+
+    class ForestSlime {
+      constructor(x, z) {
+        this.group = new THREE.Group();
+        this.group.position.set(x, 0, z);
+
+        // Blob Mesh
+        this.mesh = new THREE.Mesh(new THREE.DodecahedronGeometry(0.75, 1), slimeMat);
+        this.mesh.position.y = 0.65;
+        this.mesh.castShadow = true;
+        this.group.add(this.mesh);
+
+        // Cute Little Eyes
+        const sEyeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+        const seR = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), sEyeMat);
+        seR.position.set(0.24, 0.75, 0.55);
+        const seL = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), sEyeMat);
+        seL.position.set(-0.24, 0.75, 0.55);
+        this.group.add(seR);
+        this.group.add(seL);
+
+        scene.add(this.group);
+
+        this.hp = 45;
+        this.maxHp = 45;
+        this.speed = 3.6;
+        this.hopTimer = Math.random() * 2;
+        this.hopDuration = 0.5;
+        this.isHopping = false;
+        this.hopProgress = 0;
+        this.hopStart = new THREE.Vector3();
+        this.hopTarget = new THREE.Vector3();
+        this.isAlive = true;
+        this.knockbackVelocity = new THREE.Vector3();
+        this.flashTimer = 0;
+      }
+
+      update(dt, playerPos) {
+        if (!this.isAlive) return;
+
+        // Flash timer on damage
+        if (this.flashTimer > 0) {
+          this.flashTimer -= dt;
+          if (this.flashTimer <= 0) {
+            this.mesh.material = slimeMat;
+          }
+        }
+
+        // Apply Knockback Decay
+        if (this.knockbackVelocity.lengthSq() > 0.01) {
+          this.group.position.addScaledVector(this.knockbackVelocity, dt);
+          this.knockbackVelocity.multiplyScalar(Math.max(0, 1 - (dt * 7)));
+          return;
+        }
+
+        const distToPlayer = this.group.position.distanceTo(playerPos);
+
+        // AI Hop Logic
+        this.hopTimer += dt;
+        if (this.hopTimer > 1.2 && !this.isHopping) {
+          this.hopTimer = 0;
+          this.isHopping = true;
+          this.hopProgress = 0;
+          this.hopStart.copy(this.group.position);
+
+          let hopDir = new THREE.Vector3();
+          if (distToPlayer < 18) {
+            // Chase Player!
+            hopDir.subVectors(playerPos, this.group.position).normalize();
+          } else {
+            // Random Wander
+            const angle = Math.random() * Math.PI * 2;
+            hopDir.set(Math.cos(angle), 0, Math.sin(angle));
+          }
+
+          const hopDist = 1.6 + Math.random() * 0.8;
+          this.hopTarget.copy(this.hopStart).addScaledVector(hopDir, hopDist);
+          this.group.lookAt(this.hopTarget.x, this.group.position.y, this.hopTarget.z);
+        }
+
+        if (this.isHopping) {
+          this.hopProgress += dt / this.hopDuration;
+          if (this.hopProgress >= 1) {
+            this.hopProgress = 1;
+            this.isHopping = false;
+            this.group.position.copy(this.hopTarget);
+            this.mesh.scale.set(1.2, 0.8, 1.2); // Squash on land
+          } else {
+            // Parabolic Hop Jump
+            this.group.position.lerpVectors(this.hopStart, this.hopTarget, this.hopProgress);
+            const hopHeight = Math.sin(this.hopProgress * Math.PI) * 1.1;
+            this.mesh.position.y = 0.65 + hopHeight;
+            // Stretch while leaping
+            const stretch = 1 + Math.sin(this.hopProgress * Math.PI) * 0.35;
+            this.mesh.scale.set(1 / stretch, stretch, 1 / stretch);
+          }
+        } else {
+          // Recover squash smoothly
+          this.mesh.scale.lerp(new THREE.Vector3(1, 1, 1), dt * 8);
+        }
+      }
+
+      takeDamage(amount, knockbackDir) {
+        if (!this.isAlive) return;
+        this.hp -= amount;
+        this.flashTimer = 0.14;
+        this.mesh.material = slimeHurtMat;
+
+        // Apply Knockback
+        this.knockbackVelocity.copy(knockbackDir).multiplyScalar(10);
+        this.isHopping = false;
+
+        Sound.playHitSound();
+        spawnDamagePopup(amount, this.group.position);
+
+        if (this.hp <= 0) {
+          this.die();
+        }
+      }
+
+      die() {
+        this.isAlive = false;
+        scene.remove(this.group);
+        Sound.playSlimePop();
+        spawnSlimeParticles(this.group.position);
+        gameState.kills++;
+        document.getElementById('kill-count').textContent = gameState.kills;
+
+        // Respawn elsewhere after 4.5 seconds
+        setTimeout(() => {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = 14 + Math.random() * 20;
+          this.group.position.set(playerGroup.position.x + Math.cos(angle) * dist, 0, playerGroup.position.z + Math.sin(angle) * dist);
+          this.hp = this.maxHp;
+          this.isAlive = true;
+          this.mesh.material = slimeMat;
+          scene.add(this.group);
+        }, 4500);
+      }
+    }
+
+    // Spawn Initial Slime Herd
+    for (let i = 0; i < 7; i++) {
+      const angle = (i / 7) * Math.PI * 2;
+      const r = 8 + Math.random() * 12;
+      slimes.push(new ForestSlime(Math.cos(angle) * r, Math.sin(angle) * r));
+    }
+
+    /* =========================================================================
+       PARTICLE SYSTEM (Burst Jelly on Defeat)
+       ========================================================================= */
+    const particles = [];
+    const pGeo = new THREE.DodecahedronGeometry(0.18, 0);
+    const pMat = new THREE.MeshBasicMaterial({ color: 0x55ff99 });
+
+    function spawnSlimeParticles(pos) {
+      for (let i = 0; i < 14; i++) {
+        const mesh = new THREE.Mesh(pGeo, pMat);
+        mesh.position.copy(pos).add(new THREE.Vector3(0, 0.5, 0));
+        scene.add(mesh);
+        const vel = new THREE.Vector3(
+          (Math.random() - 0.5) * 8,
+          3 + Math.random() * 5,
+          (Math.random() - 0.5) * 8
+        );
+        particles.push({ mesh, vel, life: 1.0 });
+      }
+    }
+
+    function updateParticles(dt) {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life -= dt * 1.5;
+        p.vel.y -= 16 * dt; // Gravity
+        p.mesh.position.addScaledVector(p.vel, dt);
+        const s = Math.max(0.01, p.life);
+        p.mesh.scale.set(s, s, s);
+
+        if (p.life <= 0) {
+          scene.remove(p.mesh);
+          particles.splice(i, 1);
+        }
+      }
+    }
+
+    function spawnDamagePopup(damage, worldPos) {
+      const screenPos = worldPos.clone().add(new THREE.Vector3(0, 1.4, 0));
+      screenPos.project(camera);
+      const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
+      const y = (-(screenPos.y * 0.5) + 0.5) * window.innerHeight;
+
+      const popup = document.createElement('div');
+      popup.className = 'damage-popup';
+      popup.textContent = `-${damage}`;
+      popup.style.left = `${x}px`;
+      popup.style.top = `${y}px`;
+      document.getElementById('popups-container').appendChild(popup);
+
+      setTimeout(() => popup.remove(), 800);
+    }
+
+    /* =========================================================================
+       GAME STATE & VALHEIM STAMINA SYSTEM
+       ========================================================================= */
+    const gameState = {
+      hp: 100,
+      maxHp: 100,
+      stamina: 100,
+      maxStamina: 100,
+      staminaRegenDelay: 0,
+      isExhausted: false,
+      kills: 0,
+      walkSpeed: 6.2,
+      sprintSpeed: 12.0,
+      jumpForce: 8.5,
+      gravity: 24.0,
+      velocityY: 0,
+      isGrounded: true,
+      isAttacking: false,
+      attackTime: 0,
+      comboStep: 0,
+    };
+
+    /* =========================================================================
+       INPUT & ORBIT CAMERA CONTROLS
+       ========================================================================= */
+    const keys = {};
+    window.addEventListener('keydown', (e) => {
+      keys[e.code] = true;
+      if (e.code === 'Space') e.preventDefault();
+    });
+    window.addEventListener('keyup', (e) => {
+      keys[e.code] = false;
+    });
+
+    // Pointer Lock & Mouse Look
+    const cameraOrbit = {
+      yaw: 0,
+      pitch: 0.28,
+      distance: 4.8,
+      targetY: 1.1,
+      sensitivity: 0.0024
+    };
+
+    let isPointerLocked = false;
+    const overlay = document.getElementById('click-overlay');
+
+    overlay.addEventListener('click', () => {
+      Sound.init();
+      canvas.requestPointerLock();
+    });
+
+    document.addEventListener('pointerlockchange', () => {
+      isPointerLocked = (document.pointerLockElement === canvas);
+      if (isPointerLocked) {
+        overlay.classList.add('hidden');
+      } else {
+        overlay.classList.remove('hidden');
+      }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isPointerLocked) return;
+      cameraOrbit.yaw -= e.movementX * cameraOrbit.sensitivity;
+      cameraOrbit.pitch -= e.movementY * cameraOrbit.sensitivity;
+      cameraOrbit.pitch = Math.max(-0.25, Math.min(1.15, cameraOrbit.pitch)); // Pitch clamp
+    });
+
+    // Attack Trigger on Left Click
+    window.addEventListener('mousedown', (e) => {
+      if (e.button === 0 && isPointerLocked) {
+        triggerAttack();
+      }
+    });
+
+    function triggerAttack() {
+      if (gameState.isAttacking || gameState.isExhausted) return;
+
+      const staminaCost = 14;
+      if (gameState.stamina < staminaCost) return;
+
+      gameState.stamina -= staminaCost;
+      gameState.staminaRegenDelay = 1.2;
+      gameState.isAttacking = true;
+      gameState.attackTime = 0;
+      gameState.comboStep = (gameState.comboStep + 1) % 3;
+
+      Sound.playSwordWhoosh();
+
+      // Show slash visual arc
+      slashArcMat.opacity = 0.85;
+
+      // Check Hit against Slimes
+      const attackRange = 2.4;
+      const playerPos = playerGroup.position;
+      const attackDir = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), playerGroup.rotation.y);
+
+      slimes.forEach(slime => {
+        if (!slime.isAlive) return;
+        const toSlime = new THREE.Vector3().subVectors(slime.group.position, playerPos);
+        const dist = toSlime.length();
+        if (dist <= attackRange) {
+          toSlime.normalize();
+          // Angle check (in front of kitten)
+          if (attackDir.dot(toSlime) > 0.25) {
+            const damage = 20 + Math.floor(Math.random() * 12);
+            slime.takeDamage(damage, attackDir);
+          }
+        }
+      });
+    }
+
+    /* =========================================================================
+       MAIN GAME LOOP
+       ========================================================================= */
+    let lastTime = performance.now();
+    let walkAnimTime = 0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const now = performance.now();
+      const dt = Math.min((now - lastTime) / 1000, 0.1);
+      lastTime = now;
+
+      // 1. Process Valheim Stamina Economy
+      const wantsSprint = (keys['ShiftLeft'] || keys['ShiftRight']);
+      const isMovingInput = (keys['KeyW'] || keys['KeyS'] || keys['KeyA'] || keys['KeyD']);
+
+      if (isMovingInput && wantsSprint && !gameState.isExhausted && gameState.stamina > 0) {
+        // Drain Stamina while sprinting
+        gameState.stamina = Math.max(0, gameState.stamina - (18 * dt));
+        gameState.staminaRegenDelay = 1.2;
+        if (gameState.stamina <= 0) {
+          gameState.isExhausted = true;
+        }
+      } else {
+        // Stamina Regeneration after delay
+        if (gameState.staminaRegenDelay > 0) {
+          gameState.staminaRegenDelay -= dt;
+        } else if (gameState.stamina < gameState.maxStamina) {
+          gameState.stamina = Math.min(gameState.maxStamina, gameState.stamina + (24 * dt));
+          if (gameState.isExhausted && gameState.stamina >= 25) {
+            gameState.isExhausted = false; // Recovered from exhaustion!
+          }
+        }
+      }
+
+      // Update HUD
+      const staminaPercent = (gameState.stamina / gameState.maxStamina) * 100;
+      const staminaBarEl = document.getElementById('stamina-bar');
+      staminaBarEl.style.width = `${staminaPercent}%`;
+      document.getElementById('stamina-text').textContent = `${Math.round(gameState.stamina)} / ${gameState.maxStamina}`;
+
+      if (gameState.isExhausted) {
+        staminaBarEl.classList.add('stamina-exhausted');
+        document.getElementById('stamina-title').textContent = '⚠️ EXHAUSTED (PULIH 25%)';
+        document.getElementById('stamina-title').style.color = '#ff6b6b';
+      } else {
+        staminaBarEl.classList.remove('stamina-exhausted');
+        document.getElementById('stamina-title').textContent = 'Stamina (Valheim)';
+        document.getElementById('stamina-title').style.color = '#dfd7cc';
+      }
+
+      // 2. Player Movement Relative to Camera Orbit
+      let moveDir = new THREE.Vector3();
+      if (keys['KeyW']) moveDir.z += 1;
+      if (keys['KeyS']) moveDir.z -= 1;
+      if (keys['KeyA']) moveDir.x += 1;
+      if (keys['KeyD']) moveDir.x -= 1;
+
+      const isMoving = moveDir.lengthSq() > 0.001;
+      if (isMoving) {
+        moveDir.normalize();
+
+        // Rotate input by camera yaw
+        moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraOrbit.yaw);
+
+        const currentSpeed = (wantsSprint && !gameState.isExhausted && gameState.stamina > 0)
+          ? gameState.sprintSpeed
+          : gameState.walkSpeed;
+
+        playerGroup.position.addScaledVector(moveDir, currentSpeed * dt);
+
+        // Smooth rotation towards movement direction
+        const targetAngle = Math.atan2(moveDir.x, moveDir.z);
+        let diff = targetAngle - playerGroup.rotation.y;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        playerGroup.rotation.y += diff * 12 * dt;
+
+        // Feline Walk / Run Cycle Animation
+        walkAnimTime += dt * (currentSpeed * 1.8);
+        bodyMesh.position.y = 0.75 + Math.sin(walkAnimTime * 2) * 0.06;
+        bodyMesh.rotation.z = Math.sin(walkAnimTime) * 0.08;
+        tailGroup.rotation.y = Math.sin(walkAnimTime) * 0.4;
+      } else {
+        // Idle breathing & tail sway
+        walkAnimTime += dt * 2.5;
+        bodyMesh.position.y = 0.75 + Math.sin(walkAnimTime) * 0.02;
+        tailGroup.rotation.y = Math.sin(walkAnimTime * 0.8) * 0.25;
+      }
+
+      // 3. Jump & Vertical Gravity
+      if (keys['Space'] && gameState.isGrounded && !gameState.isExhausted && gameState.stamina >= 10) {
+        gameState.velocityY = gameState.jumpForce;
+        gameState.isGrounded = false;
+        gameState.stamina -= 10;
+        gameState.staminaRegenDelay = 1.0;
+        Sound.playJump();
+      }
+
+      gameState.velocityY -= gameState.gravity * dt;
+      playerGroup.position.y += gameState.velocityY * dt;
+
+      if (playerGroup.position.y <= 0) {
+        playerGroup.position.y = 0;
+        gameState.velocityY = 0;
+        gameState.isGrounded = true;
+      }
+
+      // 4. Attack Animation Routine
+      if (gameState.isAttacking) {
+        gameState.attackTime += dt * 4.5;
+        // Swing sword forward with rapid snap
+        swordGroup.rotation.x = Math.PI / 4 + Math.sin(gameState.attackTime * Math.PI) * 1.5;
+        rightArmSocket.rotation.y = Math.sin(gameState.attackTime * Math.PI) * 1.2;
+
+        slashArcMat.opacity = Math.max(0, 0.85 - gameState.attackTime * 0.85);
+
+        if (gameState.attackTime >= 1.0) {
+          gameState.isAttacking = false;
+          swordGroup.rotation.x = Math.PI / 4;
+          rightArmSocket.rotation.y = 0;
+          slashArcMat.opacity = 0;
+        }
+      }
+
+      // 5. Orbit Camera Position Smoothing
+      const camTargetPos = playerGroup.position.clone();
+      camTargetPos.y += cameraOrbit.targetY;
+
+      const camX = camTargetPos.x + Math.sin(cameraOrbit.yaw) * Math.cos(cameraOrbit.pitch) * cameraOrbit.distance;
+      const camY = camTargetPos.y + Math.sin(cameraOrbit.pitch) * cameraOrbit.distance;
+      const camZ = camTargetPos.z + Math.cos(cameraOrbit.yaw) * Math.cos(cameraOrbit.pitch) * cameraOrbit.distance;
+
+      camera.position.lerp(new THREE.Vector3(camX, Math.max(0.6, camY), camZ), 0.18);
+      camera.lookAt(camTargetPos);
+
+      // 6. Update Slimes
+      slimes.forEach(slime => slime.update(dt, playerGroup.position));
+
+      // 7. Update Particles
+      updateParticles(dt);
+
+      // 8. Render
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
