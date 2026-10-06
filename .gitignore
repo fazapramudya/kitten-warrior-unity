@@ -12,6 +12,8 @@
 /[Uu]ser[Ss]ettings/
 /[Mm]emoryCaptures/
 /[Rr]ecordings/
+desktop-app/dist/
+*.zip
 
 # Asset meta-data should only be ignored when using internal work APIs
 /[Aa]ssets/AssetStoreTools*

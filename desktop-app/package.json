@@ -1,0 +1,8 @@
+{
+  "name": "kitten-warrior",
+  "version": "0.1.0",
+  "description": "Kitten Warrior 3D Prototype",
+  "main": "main.js",
+  "author": "fazapramudya",
+  "license": "MIT"
+}
