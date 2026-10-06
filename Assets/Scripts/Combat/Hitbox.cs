@@ -6,8 +6,8 @@ namespace KittenWarrior.Combat
 {
     /// <summary>
     /// Active weapon hitbox script. Detects collisions with Hurtbox/IDamageable.
-    /// Tracks hit targets per swing to guarantee single-hit registration per target.
-    /// Owned by: Leo (Combat Director)
+    /// Imparts directional knockback and single-hit registration per swing.
+    /// Owned by: Worker-2-CombatAI
     /// </summary>
     [RequireComponent(typeof(Collider))]
     [DisallowMultipleComponent]
@@ -36,9 +36,6 @@ namespace KittenWarrior.Combat
             owner = attacker;
         }
 
-        /// <summary>
-        /// Activates the hitbox for the duration of a swing animation event.
-        /// </summary>
         public void OpenHitbox(DamageInfo damagePayload)
         {
             currentDamageInfo = damagePayload;
@@ -48,9 +45,6 @@ namespace KittenWarrior.Combat
             hitCollider.enabled = true;
         }
 
-        /// <summary>
-        /// Closes the hitbox at the recovery phase of the attack.
-        /// </summary>
         public void CloseHitbox()
         {
             isHitboxActive = false;
@@ -62,7 +56,7 @@ namespace KittenWarrior.Combat
         {
             if (!isHitboxActive) return;
 
-            // Check layer mask
+            // Layer mask check
             if (((1 << other.gameObject.layer) & targetLayers) == 0) return;
 
             // Avoid self-damage
@@ -71,7 +65,6 @@ namespace KittenWarrior.Combat
                 return;
             }
 
-            // Check Hurtbox or IDamageable
             if (other.TryGetComponent<Hurtbox>(out var hurtbox))
             {
                 ProcessHit(hurtbox.OwnerDamageable, other.ClosestPoint(transform.position));
@@ -86,14 +79,18 @@ namespace KittenWarrior.Combat
         {
             if (target == null || target.IsDead) return;
 
-            // Ensure one hit per entity per swing
+            // Ensure single hit registration per swing
             if (hitEntities.Contains(target)) return;
-
             hitEntities.Add(target);
 
             DamageInfo hitData = currentDamageInfo;
             hitData.HitPoint = contactPoint;
             hitData.HitNormal = (transform.position - contactPoint).normalized;
+
+            // Calculate directional knockback away from attacker
+            Vector3 knockbackDir = owner != null ? (target.GetTransform().position - owner.transform.position).normalized : transform.forward;
+            knockbackDir.y = 0.2f; // Slight upward pop
+            hitData.KnockbackDirection = knockbackDir.normalized;
 
             bool wasDamaged = target.TakeDamage(hitData);
             if (wasDamaged)

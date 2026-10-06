@@ -1,67 +1,51 @@
 # Kitten Warrior — Architecture & Engineering Specification
 
-## 1. Team & Specialist Workers (Hermes 3D)
+## 1. Tim & Worker Spesialis (Hermes 3D Virtual Office)
 
-Proyek ini diorkestrasi oleh **Hermes (Technical Director & Orchestrator)** dengan 4 AI Specialist Workers yang terhubung langsung di Hermes 3D:
+Proyek ini diorkestrasi oleh **Hermes (Technical Director & Orchestrator)** dengan 4 worker spesialis yang aktif di kantor virtual Hermes 3D:
 
-| Specialist Worker | Handle ID | Domain & Tanggung Jawab | File & Modul Utama |
+| Worker Tag | Domain & Peran | Direktori Standar | Tanggung Jawab Utama |
 |---|---|---|---|
-| **Felix** | `felix-gameplay` | Character Locomotion, Stamina Dynamics, Camera System | `Assets/Scripts/Gameplay/` (`PlayerController.cs`, `StaminaSystem.cs`, `ThirdPersonCamera.cs`) |
-| **Leo** | `leo-combat` | Tactical Combat, Hitbox/Hurtbox, Combos, Parry Timing | `Assets/Scripts/Combat/` (`CombatController.cs`, `Hitbox.cs`, `Hurtbox.cs`, `WeaponData.cs`, `DamageInfo.cs`) |
-| **Grimm** | `grimm-ai` | Enemy AI FSM, Navigation, Archetypes & Boss Encounters | `Assets/Scripts/AI/` (`EnemyBrain.cs`, `EnemyBase.cs`, `EnemyData.cs`, `Enemies/*.cs`) |
-| **Luna** | `luna-systems` | Architecture Backbone, URP Atmosphere, Audio & Events | `Assets/Scripts/Core/` (`GameManager.cs`, `GameEvents.cs`, `AtmosphericLightingController.cs`, `AudioManager.cs`) |
+| **`Worker-1-Gameplay`** | Lead Gameplay & Character Engineer | `Assets/Scripts/Player/`<br>`Assets/Scripts/Camera/` | Kontrol karakter feline third-person, Walk, Sprint (stamina drain), Jump, Dodge-Roll, dan orbit kamera anti-clip. |
+| **`Worker-2-CombatAI`** | Combat & Monster AI Specialist | `Assets/Scripts/Combat/`<br>`Assets/Scripts/Enemies/` | FSM musuh (Idle, Patrol, Chase, Attack, Stunned, Dead), AI Slime & Goblin, Hitbox/Hurtbox, parry window, dan efek knockback. |
+| **`Worker-3-Systems`** | Systems, Stats & Balance Architect | `Assets/Scripts/Core/`<br>`Assets/Scripts/Data/` | ScriptableObject arsitektur (`WeaponData`, `EnemyData`, `DropTableData`), formula matematika balancing (stamina, regenerasi, kalkulasi damage Attack vs Defense). |
+| **`Worker-4-QA-Reviewer`** | QA, Code Reviewer & Git Orchestrator | Root Repository | QA & standardisasi kode C#, verifikasi .gitignore, orkestrasi Git commits, serta pembuatan panduan integrasi Editor (`SETUP_GUIDE.md`). |
 
 ---
 
-## 2. Diagram Alur & Interaksi Modul
-
+## 2. Struktur Direktori Kode Unity
 ```
-[ User Input ]
-      │
-      ▼
-[ PlayerController ] ◄────────► [ StaminaSystem ] (Valheim Pool & Recovery)
-      │                                │
-      ▼                                ▼
-[ CombatController ] ──────────► [ TryConsumeStamina ]
-      │
-      ├─► [ Hitbox (Weapon) ] ───► [ Hurtbox / IDamageable ] ──► [ EnemyBase ]
-      │                                                               ▲
-      └─► [ Parry Window (0.22s) ] ◄── Incoming Enemy Strike          │
-                                                                 [ EnemyBrain ] (FSM)
-                                                                      │
-                                                           [ NavMeshAgent Navigation ]
+kitten-warrior-unity/
+├── Assets/
+│   ├── Scripts/
+│   │   ├── Player/        # Worker 1: PlayerController.cs, StaminaSystem.cs
+│   │   ├── Camera/        # Worker 1: ThirdPersonCamera.cs
+│   │   ├── Combat/        # Worker 2: CombatController.cs, Hitbox.cs, Hurtbox.cs, DamageInfo.cs
+│   │   ├── Enemies/       # Worker 2: EnemyBase.cs, EnemyBrain.cs, ForestSlime.cs, ForestGoblin.cs
+│   │   ├── Core/          # Worker 3: GameManager.cs, GameEvents.cs, BalancingFormulas.cs, AtmosphericLightingController.cs, AudioManager.cs
+│   │   └── Data/          # Worker 3: WeaponData.cs, EnemyData.cs, DropTableData.cs (ScriptableObjects)
+│   └── Settings/          # Project Settings & URP Presets
+├── ARCHITECTURE.md        # Spesifikasi teknis arsitektur
+├── SETUP_GUIDE.md         # Panduan pemasangan GameObject di Unity Editor
+└── README.md              # Visi game & ringkasan proyek
 ```
 
 ---
 
-## 3. Spesifikasi Mekanik Kunci (Valheim-Style)
+## 3. Formula Matematika Balancing (Worker 3)
 
-### A. Stamina Dynamics (`StaminaSystem.cs`)
-- **Maksimum**: 100 Stamina
-- **Regenerasi**: 22 Stamina / detik
-- **Regen Delay**: 1.25 detik jeda setelah konsumsi terakhir
-- **Exhaustion State**: Jika stamina mencapai 0, karakter masuk kondisi lelah dan tidak bisa melakukan aksi berat hingga pulih minimal 25%.
-- **Action Costs**:
-  - Sprint: 14 / detik
-  - Jump: 15
-  - Dodge-Roll: 25
-  - Light Attack: 16
-  - Heavy Attack: 32
-  - Block: 12
+### A. Kalkulasi Kerusakan (Attack vs Defense)
+Formula menggunakan konstanta resistensi untuk mencegah nilai negatif dan memberikan *diminishing returns*:
+$$\text{EffectiveDamage} = \text{RawDamage} \times \frac{50}{50 + \text{Defense}}$$
 
-### B. Combat & Parry Timing (`CombatController.cs` & `WeaponData.cs`)
-- **Light Combo**: 3-step chain dengan damage multiplier (1.0x -> 1.25x -> 1.75x).
-- **Parry Window**: 0.22 detik sesaat setelah mengangkat guard. Parry sukses membatalkan 100% damage dan memberikan 100 poise damage (instant stagger) ke musuh penyerang.
-- **Block**: Mengurangi 75% damage masuk dengan mengonsumsi stamina. Jika stamina habis saat menangkis, player mengalami guard-break stagger (1.2 detik).
-
-### C. Enemy Archetypes (`Assets/Scripts/AI/Enemies/`)
-1. **Forest Slime** (`ForestSlime.cs`): Lincah, serangan lompat (leap attack), damage ringan.
-2. **Goblin Spearman** (`GoblinSpearman.cs`): Jarak menengah, tusukan tombak piercing, menjaga jarak taktis.
-3. **Forest Troll Boss** (`ForestTrollBoss.cs`): Musuh raksasa dengan serangan Ground Slam AoE (radius 4.5m), shockwave partikel, dan poise tinggi.
+### B. Regenerasi Stamina & Efek Kelelahan (Valheim Style)
+- Kondisi normal: 22 stamina/detik setelah jeda 1.25 detik.
+- Bonus Shelter / Resting: $1.5\times$ kecepatan regenerasi.
+- Exhaustion penalty: Jika stamina habis ($0$), regenerasi melambat menjadi $0.6\times$ dan aksi tempur dikunci hingga stamina kembali ke $25\%$.
 
 ---
 
-## 4. Standar Kode & Performa
-- **Zero-Allocation**: Menggunakan `HashSet<IDamageable>` reuse, struct `DamageInfo`, dan C# static events tanpa alokasi garbage collection di runtime combat loop.
-- **ScriptableObject-Driven**: Data persenjataan (`WeaponData`) dan konfigurasi musuh (`EnemyData`) terpisah murni dari logic sehingga mudah di-tune oleh designer di Unity Inspector.
-- **URP Lighting Ready**: Kontrol terpusat untuk pencahayaan golden hour, soft shadow, dan kabut atmosferik (`AtmosphericLightingController.cs`).
+## 4. Checklist Kualitas & Review Kode (Worker 4)
+- **Garbage Collection Friendly**: Menggunakan struct `DamageInfo`, reuse `HashSet<IDamageable>` pada hitbox, dan static event channels tanpa alokasi memori berulang di loop `Update()`.
+- **Konvensi Penamaan**: `PascalCase` untuk kelas, antarmuka, dan method publik; `camelCase` untuk field privat dan parameter fungsi.
+- **Integritas Git**: File cache Unity (`Library/`, `Temp/`, `.vs/`) diabaikan secara ketat oleh `.gitignore`.

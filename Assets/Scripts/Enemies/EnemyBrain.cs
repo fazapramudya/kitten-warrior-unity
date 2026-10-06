@@ -1,9 +1,8 @@
 using System;
 using UnityEngine;
 using UnityEngine.AI;
-using KittenWarrior.Combat;
 
-namespace KittenWarrior.AI
+namespace KittenWarrior.Enemies
 {
     public enum AIState
     {
@@ -11,14 +10,14 @@ namespace KittenWarrior.AI
         Patrol,
         Chase,
         Attack,
-        Stagger,
+        Stunned,
         Dead
     }
 
     /// <summary>
-    /// Modular finite state machine (FSM) enemy brain using NavMeshAgent.
-    /// Handles sensory awareness, patrol waypoints, target engagement, and attack triggers.
-    /// Owned by: Grimm (Enemy AI Architect)
+    /// Modular Finite State Machine (FSM) enemy brain driving AI behaviors through NavMesh.
+    /// Handles Idle, Patrol, Chase, Attack, Stunned, and Dead states.
+    /// Owned by: Worker-2-CombatAI
     /// </summary>
     [RequireComponent(typeof(NavMeshAgent))]
     [DisallowMultipleComponent]
@@ -30,7 +29,7 @@ namespace KittenWarrior.AI
         [SerializeField] private LayerMask targetLayer;
         [SerializeField] private LayerMask obstacleLayer;
 
-        [Header("State Settings")]
+        [Header("State Parameters")]
         [SerializeField] private float idleDurationAtWaypoint = 2.5f;
 
         private AIState currentState = AIState.Idle;
@@ -57,8 +56,8 @@ namespace KittenWarrior.AI
         {
             if (enemyBase != null)
             {
-                enemyBase.OnStaggerStarted += HandleStaggerStarted;
-                enemyBase.OnStaggerEnded += HandleStaggerEnded;
+                enemyBase.OnStunStarted += HandleStunStarted;
+                enemyBase.OnStunEnded += HandleStunEnded;
                 enemyBase.OnDeath += HandleDeath;
             }
         }
@@ -67,8 +66,8 @@ namespace KittenWarrior.AI
         {
             if (enemyBase != null)
             {
-                enemyBase.OnStaggerStarted -= HandleStaggerStarted;
-                enemyBase.OnStaggerEnded -= HandleStaggerEnded;
+                enemyBase.OnStunStarted -= HandleStunStarted;
+                enemyBase.OnStunEnded -= HandleStunEnded;
                 enemyBase.OnDeath -= HandleDeath;
             }
         }
@@ -84,7 +83,7 @@ namespace KittenWarrior.AI
 
         private void Update()
         {
-            if (currentState == AIState.Dead || currentState == AIState.Stagger) return;
+            if (currentState == AIState.Dead || currentState == AIState.Stunned) return;
 
             if (attackTimer > 0f) attackTimer -= Time.deltaTime;
 
@@ -111,14 +110,12 @@ namespace KittenWarrior.AI
         {
             if (enemyBase == null || enemyBase.Data == null) return;
 
-            // Search within sensory sphere
             Collider[] hits = Physics.OverlapSphere(transform.position, enemyBase.Data.DetectionRadius, targetLayer);
             if (hits.Length > 0)
             {
                 Transform potential = hits[0].transform;
                 Vector3 toTarget = (potential.position - transform.position).normalized;
 
-                // Check Line of Sight
                 if (!Physics.Raycast(transform.position + Vector3.up, toTarget, enemyBase.Data.DetectionRadius, obstacleLayer))
                 {
                     currentTarget = potential;
@@ -130,7 +127,6 @@ namespace KittenWarrior.AI
             }
             else if (currentTarget != null && Vector3.Distance(transform.position, currentTarget.position) > enemyBase.Data.DetectionRadius * 1.5f)
             {
-                // Lost target
                 currentTarget = null;
                 SetState(AIState.Patrol);
             }
@@ -153,8 +149,7 @@ namespace KittenWarrior.AI
 
             if (!agent.hasPath || agent.remainingDistance <= agent.stoppingDistance + 0.3f)
             {
-                // Pick new random point around spawn
-                Vector2 randomCircle = UnityEngine.Random.insideUnitCircle * enemyBase.Data.PatrolRadius;
+                Vector2 randomCircle = UnityEngine.Random.insideUnitCircle * 8f;
                 patrolDestination = spawnPoint + new Vector3(randomCircle.x, 0f, randomCircle.y);
 
                 if (NavMesh.SamplePosition(patrolDestination, out NavMeshHit hit, 4f, NavMesh.AllAreas))
@@ -174,7 +169,7 @@ namespace KittenWarrior.AI
                 return;
             }
 
-            agent.speed = enemyBase.Data.ChaseSpeed;
+            agent.speed = enemyBase.Data.MoveSpeed;
             agent.SetDestination(currentTarget.position);
 
             float distanceToTarget = Vector3.Distance(transform.position, currentTarget.position);
@@ -192,7 +187,6 @@ namespace KittenWarrior.AI
                 return;
             }
 
-            // Face target smoothly
             Vector3 lookDir = (currentTarget.position - transform.position).normalized;
             lookDir.y = 0f;
             if (lookDir != Vector3.zero)
@@ -202,7 +196,7 @@ namespace KittenWarrior.AI
 
             float distanceToTarget = Vector3.Distance(transform.position, currentTarget.position);
 
-            if (distanceToTarget > enemyBase.Data.AttackRange * 1.25f)
+            if (distanceToTarget > enemyBase.Data.AttackRange * 1.3f)
             {
                 SetState(AIState.Chase);
                 return;
@@ -215,13 +209,13 @@ namespace KittenWarrior.AI
             }
         }
 
-        private void HandleStaggerStarted()
+        private void HandleStunStarted()
         {
             agent.isStopped = true;
-            SetState(AIState.Stagger);
+            SetState(AIState.Stunned);
         }
 
-        private void HandleStaggerEnded()
+        private void HandleStunEnded()
         {
             agent.isStopped = false;
             SetState(currentTarget != null ? AIState.Chase : AIState.Patrol);

@@ -1,12 +1,13 @@
 using System;
 using UnityEngine;
+using KittenWarrior.Core;
 
-namespace KittenWarrior.Gameplay
+namespace KittenWarrior.Player
 {
     /// <summary>
     /// Valheim-inspired stamina system.
     /// Manages player stamina pool, action consumption, regen delay, and exhaustion state.
-    /// Owned by: Felix (Gameplay Lead)
+    /// Owned by: Worker-1-Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     public class StaminaSystem : MonoBehaviour
@@ -15,8 +16,8 @@ namespace KittenWarrior.Gameplay
         [Tooltip("Maximum stamina pool available to the player.")]
         [SerializeField] private float maxStamina = 100f;
 
-        [Tooltip("Rate at which stamina regenerates per second.")]
-        [SerializeField] private float regenRate = 22f;
+        [Tooltip("Base rate at which stamina regenerates per second.")]
+        [SerializeField] private float baseRegenRate = 22f;
 
         [Tooltip("Delay in seconds before stamina begins to regenerate after consumption.")]
         [SerializeField] private float regenDelay = 1.25f;
@@ -29,11 +30,13 @@ namespace KittenWarrior.Gameplay
         private float currentStamina;
         private float regenTimer;
         private bool isExhausted;
+        private bool isResting;
 
         public float CurrentStamina => currentStamina;
         public float MaxStamina => maxStamina;
         public float NormalizedStamina => Mathf.Clamp01(currentStamina / Mathf.Max(maxStamina, 0.0001f));
         public bool IsExhausted => isExhausted;
+        public bool IsResting => isResting;
 
         public event Action<float, float> OnStaminaChanged; // (current, max)
         public event Action<bool> OnExhaustionStateChanged; // (isExhausted)
@@ -46,6 +49,7 @@ namespace KittenWarrior.Gameplay
         private void Start()
         {
             OnStaminaChanged?.Invoke(currentStamina, maxStamina);
+            GameEvents.TriggerPlayerStaminaChanged(currentStamina, maxStamina);
         }
 
         private void Update()
@@ -63,8 +67,10 @@ namespace KittenWarrior.Gameplay
 
             if (currentStamina < maxStamina)
             {
-                currentStamina = Mathf.Min(maxStamina, currentStamina + (regenRate * deltaTime));
+                float gained = BalancingFormulas.CalculateStaminaRegen(baseRegenRate, isResting, isExhausted, deltaTime);
+                currentStamina = Mathf.Min(maxStamina, currentStamina + gained);
                 OnStaminaChanged?.Invoke(currentStamina, maxStamina);
+                GameEvents.TriggerPlayerStaminaChanged(currentStamina, maxStamina);
 
                 // Recover from exhaustion once stamina reaches threshold
                 if (isExhausted && currentStamina >= (maxStamina * recoveryThresholdPercent))
@@ -76,7 +82,7 @@ namespace KittenWarrior.Gameplay
         }
 
         /// <summary>
-        /// Attempts to consume an exact amount of stamina.
+        /// Attempts to consume an exact amount of stamina for an instantaneous action.
         /// </summary>
         public bool TryConsumeStamina(float amount)
         {
@@ -88,6 +94,7 @@ namespace KittenWarrior.Gameplay
                 currentStamina = Mathf.Max(0f, currentStamina - amount);
                 regenTimer = regenDelay;
                 OnStaminaChanged?.Invoke(currentStamina, maxStamina);
+                GameEvents.TriggerPlayerStaminaChanged(currentStamina, maxStamina);
 
                 if (Mathf.Approximately(currentStamina, 0f))
                 {
@@ -103,7 +110,6 @@ namespace KittenWarrior.Gameplay
 
         /// <summary>
         /// Consumes stamina over time (e.g. while sprinting).
-        /// Returns true if stamina is still available.
         /// </summary>
         public bool TryConsumeStaminaOverTime(float ratePerSecond, float deltaTime)
         {
@@ -115,6 +121,7 @@ namespace KittenWarrior.Gameplay
                 currentStamina = Mathf.Max(0f, currentStamina - cost);
                 regenTimer = regenDelay;
                 OnStaminaChanged?.Invoke(currentStamina, maxStamina);
+                GameEvents.TriggerPlayerStaminaChanged(currentStamina, maxStamina);
                 return true;
             }
 
@@ -123,24 +130,14 @@ namespace KittenWarrior.Gameplay
             regenTimer = regenDelay;
             isExhausted = true;
             OnStaminaChanged?.Invoke(currentStamina, maxStamina);
+            GameEvents.TriggerPlayerStaminaChanged(currentStamina, maxStamina);
             OnExhaustionStateChanged?.Invoke(true);
             return false;
         }
 
-        /// <summary>
-        /// Instantly restores stamina by a set amount.
-        /// </summary>
-        public void RestoreStamina(float amount)
+        public void SetResting(bool resting)
         {
-            if (amount <= 0f) return;
-            currentStamina = Mathf.Min(maxStamina, currentStamina + amount);
-            OnStaminaChanged?.Invoke(currentStamina, maxStamina);
-
-            if (isExhausted && currentStamina >= (maxStamina * recoveryThresholdPercent))
-            {
-                isExhausted = false;
-                OnExhaustionStateChanged?.Invoke(false);
-            }
+            isResting = resting;
         }
     }
 }

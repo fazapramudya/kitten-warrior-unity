@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using UnityEngine;
-using KittenWarrior.Gameplay;
+using KittenWarrior.Player;
+using KittenWarrior.Data;
+using KittenWarrior.Core;
 
 namespace KittenWarrior.Combat
 {
@@ -16,26 +18,29 @@ namespace KittenWarrior.Combat
 
     /// <summary>
     /// Tactical player combat controller.
-    /// Manages 3-hit combo chains, block/parry windows, hit-stop, and stamina integration.
-    /// Owned by: Leo (Combat Director)
+    /// Manages light combo chain, block/parry windows, durability degradation, and knockback reactions.
+    /// Owned by: Worker-2-CombatAI
     /// </summary>
     [DisallowMultipleComponent]
     public class CombatController : MonoBehaviour, IDamageable
     {
-        [Header("Equipped Weapon")]
+        [Header("Equipped Weapon Data")]
         [SerializeField] private WeaponData currentWeapon;
         [SerializeField] private Hitbox weaponHitbox;
 
-        [Header("Health & Poise")]
+        [Header("Health & Defense")]
         [SerializeField] private float maxHealth = 120f;
+        [SerializeField] private float defense = 10f;
         [SerializeField] private float maxPoise = 50f;
         [SerializeField] private float poiseRecoveryRate = 15f;
 
         [Header("References")]
         [SerializeField] private StaminaSystem staminaSystem;
+        [SerializeField] private PlayerController playerController;
 
         private float currentHealth;
         private float currentPoise;
+        private float currentDurability;
         private CombatState combatState = CombatState.Neutral;
         private int currentComboIndex = 0;
         private float comboResetTimer = 0f;
@@ -45,13 +50,14 @@ namespace KittenWarrior.Combat
         public CombatState CurrentState => combatState;
         public float CurrentHealth => currentHealth;
         public float MaxHealth => maxHealth;
+        public float CurrentDurability => currentDurability;
         public bool IsDead => isDead;
 
         public event Action<CombatState> OnCombatStateChanged;
-        public event Action<int> OnAttackExecuted; // combo index
-        public event Action<bool> OnBlockStateChanged; // isBlocking
+        public event Action<int> OnAttackExecuted;
+        public event Action<bool> OnBlockStateChanged;
         public event Action OnParrySuccess;
-        public event Action<float, float> OnHealthChanged; // (current, max)
+        public event Action<float, float> OnHealthChanged;
         public event Action OnDeath;
 
         private void Awake()
@@ -59,7 +65,9 @@ namespace KittenWarrior.Combat
             currentHealth = maxHealth;
             currentPoise = maxPoise;
 
+            if (currentWeapon != null) currentDurability = currentWeapon.MaxDurability;
             if (staminaSystem == null) staminaSystem = GetComponent<StaminaSystem>();
+            if (playerController == null) playerController = GetComponent<PlayerController>();
             if (weaponHitbox != null) weaponHitbox.Initialize(gameObject);
         }
 
@@ -82,7 +90,6 @@ namespace KittenWarrior.Combat
 
         private void UpdateTimers()
         {
-            // Combo decay timer
             if (comboResetTimer > 0f)
             {
                 comboResetTimer -= Time.deltaTime;
@@ -92,7 +99,6 @@ namespace KittenWarrior.Combat
                 }
             }
 
-            // Parry active window
             if (parryTimer > 0f)
             {
                 parryTimer -= Time.deltaTime;
@@ -126,29 +132,35 @@ namespace KittenWarrior.Combat
 
         private void TryExecuteLightAttack()
         {
-            if (staminaSystem != null && !staminaSystem.TryConsumeStamina(currentWeapon.LightAttackStaminaCost))
+            if (staminaSystem != null && !staminaSystem.TryConsumeStamina(currentWeapon.StaminaCost))
             {
-                return; // Valheim: out of stamina!
+                return;
             }
 
             SetState(CombatState.Attacking);
             OnAttackExecuted?.Invoke(currentComboIndex);
 
-            // Open hitbox with current combo damage
             float damage = currentWeapon.GetComboDamage(currentComboIndex);
-            DamageInfo payload = new DamageInfo(damage, currentWeapon.PoiseDamage, gameObject);
+            DamageInfo payload = new DamageInfo(
+                amount: damage,
+                poiseDamage: currentWeapon.PoiseDamage,
+                attacker: gameObject,
+                knockbackForce: currentWeapon.KnockbackForce
+            );
 
             if (weaponHitbox != null)
             {
                 weaponHitbox.OpenHitbox(payload);
             }
 
-            // Cycle combo chain
-            currentComboIndex = (currentComboIndex + 1) % currentWeapon.MaxComboSteps;
-            comboResetTimer = currentWeapon.ComboWindow;
+            // Apply durability wear
+            currentDurability = Mathf.Max(0f, currentDurability - currentWeapon.DurabilityLossPerHit);
 
-            // Attack cooldown / recovery simulated (in real production driven by Animation Events)
-            StartCoroutine(AttackRecoveryRoutine(0.45f));
+            // Advance combo
+            currentComboIndex = (currentComboIndex + 1) % currentWeapon.MaxComboSteps;
+            comboResetTimer = 0.85f;
+
+            StartCoroutine(AttackRecoveryRoutine(0.42f / currentWeapon.AttackSpeed));
         }
 
         private IEnumerator AttackRecoveryRoutine(float duration)
@@ -169,7 +181,7 @@ namespace KittenWarrior.Combat
         private void StartBlocking()
         {
             SetState(CombatState.Parrying);
-            parryTimer = currentWeapon.ParryWindow;
+            parryTimer = 0.22f; // Parry timing window
             OnBlockStateChanged?.Invoke(true);
         }
 
@@ -188,27 +200,34 @@ namespace KittenWarrior.Combat
             if (combatState == CombatState.Parrying)
             {
                 ExecuteParry(info.Attacker);
-                return false; // Negates damage completely on parry
+                return false;
             }
 
             // Check for Block
             if (combatState == CombatState.Blocking)
             {
-                if (staminaSystem != null && staminaSystem.TryConsumeStamina(currentWeapon.BlockStaminaCost))
+                if (staminaSystem != null && staminaSystem.TryConsumeStamina(currentWeapon != null ? currentWeapon.BlockStaminaCost : 12f))
                 {
-                    // Block reduces 75% damage
-                    info.Amount *= 0.25f;
+                    info.Amount *= 0.25f; // Block mitigates 75% damage
+                    info.KnockbackForce *= 0.3f;
                 }
                 else
                 {
-                    // Guard broken!
                     TriggerStagger(1.2f);
                 }
             }
 
-            // Apply damage
-            currentHealth = Mathf.Max(0f, currentHealth - info.Amount);
+            // Apply Balancing defense formula
+            float effectiveDamage = BalancingFormulas.CalculateDamage(info.Amount, defense);
+            currentHealth = Mathf.Max(0f, currentHealth - effectiveDamage);
             OnHealthChanged?.Invoke(currentHealth, maxHealth);
+            GameEvents.TriggerPlayerHealthChanged(currentHealth, maxHealth);
+
+            // Apply Knockback to player
+            if (playerController != null && info.KnockbackForce > 0f)
+            {
+                playerController.ApplyKnockback(info.KnockbackDirection * info.KnockbackForce);
+            }
 
             // Poise calculation
             currentPoise -= info.PoiseDamage;
@@ -228,13 +247,17 @@ namespace KittenWarrior.Combat
         private void ExecuteParry(GameObject attacker)
         {
             OnParrySuccess?.Invoke();
+            GameEvents.TriggerPlayerParried();
 
-            // Stagger attacker if possible
             if (attacker != null && attacker.TryGetComponent<IDamageable>(out var attackerDamageable))
             {
-                // Counter attack trigger
-                DamageInfo counterStagger = new DamageInfo(0f, 100f, gameObject, isParryCounter: true);
-                attackerDamageable.TakeDamage(counterStagger);
+                DamageInfo counter = new DamageInfo(
+                    amount: 0f,
+                    poiseDamage: 100f,
+                    attacker: gameObject,
+                    isParryCounter: true
+                );
+                attackerDamageable.TakeDamage(counter);
             }
 
             SetState(CombatState.Neutral);
@@ -262,6 +285,7 @@ namespace KittenWarrior.Combat
             isDead = true;
             SetState(CombatState.Neutral);
             OnDeath?.Invoke();
+            GameEvents.TriggerPlayerDied();
         }
 
         private void SetState(CombatState newState)

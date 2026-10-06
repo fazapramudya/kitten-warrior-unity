@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-namespace KittenWarrior.Gameplay
+namespace KittenWarrior.Player
 {
     public enum MovementState
     {
@@ -15,27 +15,32 @@ namespace KittenWarrior.Gameplay
     }
 
     /// <summary>
-    /// Responsive 3D third-person character locomotion controller.
-    /// Handles camera-relative movement, feline agility, jumping, and dodge-rolling.
-    /// Owned by: Felix (Gameplay Lead)
+    /// Feline character locomotion controller.
+    /// Handles camera-relative movement, smooth rotation, jumping, dodge-roll, and knockback absorption.
+    /// Owned by: Worker-1-Gameplay
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
     [DisallowMultipleComponent]
     public class PlayerController : MonoBehaviour
     {
-        [Header("Locomotion Speeds")]
-        [SerializeField] private float walkSpeed = 4.5f;
+        [Header("Locomotion Tuning")]
+        [Tooltip("Standard walking speed for feline traversal.")]
+        [SerializeField] private float walkSpeed = 4.2f;
+
+        [Tooltip("Sprint speed for rapid evasion and traversal.")]
         [SerializeField] private float sprintSpeed = 7.5f;
+
+        [Tooltip("Smooth time for rotating towards camera direction.")]
         [SerializeField] private float rotationSmoothTime = 0.08f;
 
-        [Header("Jump & Gravity")]
-        [SerializeField] private float jumpHeight = 1.4f;
+        [Header("Jump & Vertical Physics")]
+        [SerializeField] private float jumpHeight = 1.35f;
         [SerializeField] private float gravity = -20f;
         [SerializeField] private float coyoteTimeDuration = 0.15f;
         [SerializeField] private float jumpBufferDuration = 0.15f;
 
-        [Header("Dodge Roll Settings")]
-        [SerializeField] private float dodgeSpeed = 10.5f;
+        [Header("Dodge Roll (Evasion)")]
+        [SerializeField] private float dodgeSpeed = 10f;
         [SerializeField] private float dodgeDuration = 0.38f;
         [SerializeField] private float dodgeStaminaCost = 25f;
         [SerializeField] private float sprintStaminaCostPerSec = 14f;
@@ -48,7 +53,8 @@ namespace KittenWarrior.Gameplay
         private CharacterController characterController;
         private MovementState currentState = MovementState.Idle;
 
-        private Vector3 velocity;
+        private Vector3 moveVelocity;
+        private Vector3 knockbackVelocity;
         private float verticalVelocity;
         private float currentTurnVelocity;
         private float coyoteTimer;
@@ -59,6 +65,7 @@ namespace KittenWarrior.Gameplay
 
         public MovementState CurrentState => currentState;
         public bool IsGrounded => isGrounded;
+        public bool IsDodgeRolling => isDodgeRolling;
         public Vector3 Velocity => characterController.velocity;
 
         public event Action<MovementState> OnStateChanged;
@@ -68,10 +75,7 @@ namespace KittenWarrior.Gameplay
         private void Awake()
         {
             characterController = GetComponent<CharacterController>();
-            if (staminaSystem == null)
-            {
-                staminaSystem = GetComponent<StaminaSystem>();
-            }
+            if (staminaSystem == null) staminaSystem = GetComponent<StaminaSystem>();
 
             if (cameraTransform == null && Camera.main != null)
             {
@@ -89,8 +93,9 @@ namespace KittenWarrior.Gameplay
                 return;
             }
 
-            ReadInputAndMove();
+            ReadLocomotionInput();
             HandleJumpAndGravity();
+            ApplyKnockbackDecay();
             ApplyFinalMovement();
         }
 
@@ -103,7 +108,7 @@ namespace KittenWarrior.Gameplay
                 coyoteTimer = coyoteTimeDuration;
                 if (verticalVelocity < 0f)
                 {
-                    // Small negative stick force to keep grounded on slopes
+                    // Gentle grounding stick force
                     verticalVelocity = -2f;
                 }
             }
@@ -118,20 +123,20 @@ namespace KittenWarrior.Gameplay
             }
         }
 
-        private void ReadInputAndMove()
+        private void ReadLocomotionInput()
         {
             float horizontal = Input.GetAxisRaw("Horizontal");
             float vertical = Input.GetAxisRaw("Vertical");
             Vector3 inputDir = new Vector3(horizontal, 0f, vertical).normalized;
 
-            // Trigger Dodge Roll (Space or Left Alt or customizable)
+            // Trigger Dodge Roll
             if (Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.C))
             {
                 TryInitiateDodgeRoll(inputDir);
                 return;
             }
 
-            // Buffer Jump input
+            // Buffer Jump
             if (Input.GetButtonDown("Jump"))
             {
                 jumpBufferTimer = jumpBufferDuration;
@@ -144,7 +149,7 @@ namespace KittenWarrior.Gameplay
 
             if (isMoving)
             {
-                // Calculate camera-relative movement angle
+                // Smooth rotation towards camera forward
                 float targetAngle = Mathf.Atan2(inputDir.x, inputDir.z) * Mathf.Rad2Deg;
                 if (cameraTransform != null)
                 {
@@ -156,7 +161,7 @@ namespace KittenWarrior.Gameplay
 
                 Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
 
-                // Handle Sprinting with stamina drain
+                // Handle Sprinting with stamina consumption
                 if (wantsSprint && staminaSystem != null && staminaSystem.TryConsumeStaminaOverTime(sprintStaminaCostPerSec, Time.deltaTime))
                 {
                     currentSpeed = sprintSpeed;
@@ -167,11 +172,11 @@ namespace KittenWarrior.Gameplay
                     SetState(MovementState.Walking);
                 }
 
-                velocity = moveDir.normalized * currentSpeed;
+                moveVelocity = moveDir.normalized * currentSpeed;
             }
             else
             {
-                velocity = Vector3.zero;
+                moveVelocity = Vector3.zero;
                 if (isGrounded)
                 {
                     SetState(MovementState.Idle);
@@ -181,7 +186,6 @@ namespace KittenWarrior.Gameplay
 
         private void HandleJumpAndGravity()
         {
-            // Execute buffered jump if coyote time is valid
             if (jumpBufferTimer > 0f && coyoteTimer > 0f)
             {
                 if (staminaSystem == null || staminaSystem.TryConsumeStamina(jumpStaminaCost))
@@ -194,7 +198,6 @@ namespace KittenWarrior.Gameplay
                 }
             }
 
-            // Apply gravity
             verticalVelocity += gravity * Time.deltaTime;
 
             if (!isGrounded && verticalVelocity < 0f && currentState != MovementState.DodgeRolling)
@@ -209,7 +212,7 @@ namespace KittenWarrior.Gameplay
 
             if (staminaSystem != null && !staminaSystem.TryConsumeStamina(dodgeStaminaCost))
             {
-                return; // Not enough stamina
+                return;
             }
 
             if (inputDir.sqrMagnitude > 0.01f)
@@ -250,12 +253,30 @@ namespace KittenWarrior.Gameplay
 
         private void HandleDodgeRollMovement()
         {
-            // Handled inside coroutine for deterministic duration
+            // Handled deterministically in coroutine
+        }
+
+        public void ApplyKnockback(Vector3 forceVector)
+        {
+            knockbackVelocity += forceVector;
+        }
+
+        private void ApplyKnockbackDecay()
+        {
+            if (knockbackVelocity.sqrMagnitude > 0.01f)
+            {
+                characterController.Move(knockbackVelocity * Time.deltaTime);
+                knockbackVelocity = Vector3.Lerp(knockbackVelocity, Vector3.zero, Time.deltaTime * 8f);
+            }
+            else
+            {
+                knockbackVelocity = Vector3.zero;
+            }
         }
 
         private void ApplyFinalMovement()
         {
-            Vector3 finalMotion = velocity;
+            Vector3 finalMotion = moveVelocity;
             finalMotion.y = verticalVelocity;
             characterController.Move(finalMotion * Time.deltaTime);
         }
