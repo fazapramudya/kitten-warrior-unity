@@ -2,7 +2,7 @@ extends Area3D
 
 @export var speed: float = 38.0
 @export var damage: float = 65.0
-@export var gravity: float = 9.8
+@export var arrow_gravity: float = 9.8
 @export var max_lifetime: float = 5.0
 
 var velocity: Vector3 = Vector3.ZERO
@@ -33,7 +33,7 @@ func _physics_process(delta: float) -> void:
 		return
 		
 	# Apply gravity drop to trajectory
-	velocity.y -= gravity * delta
+	velocity.y -= arrow_gravity * delta
 	global_position += velocity * delta
 	
 	if velocity.length_squared() > 0.1:
