@@ -1,13 +1,17 @@
 extends Node3D
 
 @onready var player = $Player
-@onready var health_bar: ProgressBar = $HUD/MarginContainer/PanelContainer/Margin/VBoxContainer/HealthBar
-@onready var stamina_bar: ProgressBar = $HUD/MarginContainer/PanelContainer/Margin/VBoxContainer/StaminaBar
-@onready var kill_label: Label = $HUD/MarginContainer/PanelContainer/Margin/VBoxContainer/KillLabel
-@onready var trophy_label: Label = $HUD/MarginContainer/PanelContainer/Margin/VBoxContainer/TrophyLabel
-@onready var status_label: Label = $HUD/MarginContainer/PanelContainer/Margin/VBoxContainer/TitleRow/StatusLabel
-@onready var boss_panel: PanelContainer = $HUD/MarginContainer/BossPanel
-@onready var boss_health_bar: ProgressBar = $HUD/MarginContainer/BossPanel/BossMargin/BossVBox/BossHealthBar
+@onready var health_bar: ProgressBar = %HealthBar
+@onready var health_ghost_bar: ProgressBar = %HealthGhostBar
+@onready var health_num_label: Label = %HealthNumLabel
+@onready var stamina_bar: ProgressBar = %StaminaBar
+@onready var stamina_num_label: Label = %StaminaNumLabel
+@onready var weapon_badge: Label = %WeaponBadge
+@onready var kill_label: Label = %KillLabel
+@onready var trophy_label: Label = %TrophyLabel
+@onready var status_label: Label = %StatusLabel
+@onready var boss_panel: PanelContainer = %BossPanel
+@onready var boss_health_bar: ProgressBar = %BossHealthBar
 @onready var sun_light: DirectionalLight3D = $SunLight
 
 var kills: int = 0
@@ -44,7 +48,7 @@ func _ready() -> void:
 func _on_trophies_changed(count: int) -> void:
 	trophies = count
 	if trophy_label:
-		trophy_label.text = "🏆 Trophies: %d/3 (Bawa ke Altar Rimba)" % trophies
+		trophy_label.text = "🏆 Trophies: %d/3 (Altar Rimba)" % trophies
 
 func _on_weapon_changed(w_name: String, dmg_type: String) -> void:
 	active_weapon_name = w_name
@@ -53,7 +57,9 @@ func _on_weapon_changed(w_name: String, dmg_type: String) -> void:
 
 func update_kill_ui() -> void:
 	if kill_label:
-		kill_label.text = "⚔️ Kills: %d  |  Equipped: %s [%s]" % [kills, active_weapon_name, active_damage_type]
+		kill_label.text = "⚔️ Foes Slain: %d" % kills
+	if weapon_badge:
+		weapon_badge.text = "⚔️ %s [%s]" % [active_weapon_name, active_damage_type]
 
 func _process(delta: float) -> void:
 	day_cycle_time += delta
@@ -128,11 +134,20 @@ func _on_health_changed(curr: float, max_val: float) -> void:
 	if health_bar:
 		health_bar.max_value = max_val
 		health_bar.value = curr
+	if health_num_label:
+		health_num_label.text = "%d / %d" % [int(curr), int(max_val)]
+	if health_ghost_bar:
+		health_ghost_bar.max_value = max_val
+		var tw = create_tween()
+		tw.tween_interval(0.2)
+		tw.tween_property(health_ghost_bar, "value", curr, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 func _on_stamina_changed(curr: float, max_val: float) -> void:
 	if stamina_bar:
 		stamina_bar.max_value = max_val
 		stamina_bar.value = curr
+	if stamina_num_label:
+		stamina_num_label.text = "%d / %d" % [int(curr), int(max_val)]
 		
 	if status_label and player:
 		if player.is_exhausted:

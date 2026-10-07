@@ -76,6 +76,34 @@ var arrow_scene = preload("res://scenes/arrow.tscn")
 var is_aiming_bow: bool = false
 var bow_draw_timer: float = 0.0
 
+# Audio & VFX Assets
+var sfx_swing = preload("res://assets/audio/sword_swing.wav")
+var sfx_impact = preload("res://assets/audio/sword_impact.wav")
+var sfx_blunt = preload("res://assets/audio/blunt_impact.wav")
+var sfx_block = preload("res://assets/audio/shield_block.wav")
+var sfx_parry = preload("res://assets/audio/parry_chime.wav")
+var sfx_dodge = preload("res://assets/audio/dodge_roll.wav")
+var sfx_bow = preload("res://assets/audio/bow_shoot.wav")
+var sfx_step = preload("res://assets/audio/footstep_grass.wav")
+var hit_sparks_scene = preload("res://scenes/vfx/hit_sparks.tscn")
+var dust_puff_scene = preload("res://scenes/vfx/dust_puff.tscn")
+
+# Procedural Idle Alive & Cat Dynamics
+@onready var ear_l: MeshInstance3D = $VisualRoot/CatFeatures/EarL
+@onready var ear_r: MeshInstance3D = $VisualRoot/CatFeatures/EarR
+@onready var tail: MeshInstance3D = $VisualRoot/CatFeatures/Tail
+var idle_alive_timer: float = 0.0
+var step_audio_timer: float = 0.0
+
+# Combat Attack Pipeline (Anticipation -> Active -> Recovery)
+enum CombatStage { READY, WINDUP, ACTIVE, RECOVERY }
+var combat_stage: CombatStage = CombatStage.READY
+var combat_stage_timer: float = 0.0
+var current_attack_dmg: float = 0.0
+var current_attack_knock: float = 0.0
+var current_attack_type: String = "slashing"
+var attack_hit_registered: bool = false
+
 var is_blocking: bool = false
 var parry_timer: float = 0.0
 var parry_window: float = 0.25
@@ -280,6 +308,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	handle_stamina(delta)
 	handle_combat(delta)
+	handle_idle_alive(delta)
 	
 	# Block State (Right Click)
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) and not is_rolling and not is_attacking:
@@ -395,6 +424,11 @@ func _physics_process(delta: float) -> void:
 				if wants_sprint and not is_exhausted:
 					var run_tempo = clamp(h_speed / sprint_speed, 0.85, 1.25)
 					play_anim("Running_A", 0.22, run_tempo)
+					step_audio_timer += delta
+					if step_audio_timer > 0.32:
+						step_audio_timer = 0.0
+						play_sfx(sfx_step, 0.85, 1.15, -6.0)
+						spawn_dust(global_position)
 				else:
 					var walk_tempo = clamp(h_speed / walk_speed, 0.75, 1.2)
 					play_anim("Walking_A", 0.18, walk_tempo)
@@ -443,6 +477,8 @@ func start_roll(dir: Vector3) -> void:
 		anim_name = "Dodge_Left"
 		
 	play_anim(anim_name, 0.1, 1.25)
+	play_sfx(sfx_dodge, 0.95, 1.05)
+	spawn_dust(global_position)
 	spawn_text("DODGE", Color(0.6, 0.85, 1.0), 0.95)
 
 func handle_cinematic_camera(delta: float, move_dir: Vector3, wants_sprint: bool) -> void:
@@ -558,6 +594,49 @@ func handle_stamina(delta: float) -> void:
 			if is_exhausted and stamina >= 22.0:
 				is_exhausted = false
 
+func play_sfx(stream: AudioStream, pitch_min: float = 0.92, pitch_max: float = 1.08, volume_db: float = 0.0) -> void:
+	if stream == null:
+		return
+	var asp = AudioStreamPlayer.new()
+	asp.stream = stream
+	asp.volume_db = volume_db
+	asp.pitch_scale = randf_range(pitch_min, pitch_max)
+	get_tree().root.add_child(asp)
+	asp.play()
+	asp.finished.connect(asp.queue_free)
+
+func trigger_hit_stop(duration: float = 0.05) -> void:
+	Engine.time_scale = 0.08
+	await get_tree().create_timer(duration, true, false, true).timeout
+	Engine.time_scale = 1.0
+
+func spawn_sparks(pos: Vector3) -> void:
+	var sparks = hit_sparks_scene.instantiate()
+	get_parent().add_child(sparks)
+	sparks.global_position = pos
+
+func spawn_dust(pos: Vector3) -> void:
+	var dust = dust_puff_scene.instantiate()
+	get_parent().add_child(dust)
+	dust.global_position = pos
+
+func handle_idle_alive(delta: float) -> void:
+	idle_alive_timer += delta
+	# Subtle cat tail swaying
+	if tail != null:
+		tail.rotation.x = 0.707 + sin(idle_alive_timer * 3.2) * 0.12
+		tail.rotation.z = sin(idle_alive_timer * 2.1) * 0.08
+	# Subtle cat ear twitches
+	if ear_l != null and ear_r != null:
+		var twitch = sin(idle_alive_timer * 5.5)
+		if twitch > 0.88:
+			var angle = (twitch - 0.88) * 0.45
+			ear_l.rotation.z = angle
+			ear_r.rotation.z = -angle
+		else:
+			ear_l.rotation.z = 0.0
+			ear_r.rotation.z = 0.0
+
 func try_attack() -> void:
 	var stam_cost := attack_stamina_cost
 	if current_weapon == WeaponType.SPEAR:
@@ -625,19 +704,20 @@ func try_attack() -> void:
 				anim_to_play = "2H_Melee_Attack_Spin"
 				add_camera_shake(0.4)
 	
-	play_anim(anim_to_play)
+	play_anim(anim_to_play, 0.12, 1.15)
+	play_sfx(sfx_swing, 0.95, 1.1)
 	
-	# Detect hit targets in attack area
-	var hit_count := 0
-	for body in attack_area.get_overlapping_bodies():
-		if body != self and body.has_method("take_damage"):
-			var knockback_dir := (body.global_position - global_position).normalized()
-			knockback_dir.y = 0.35
-			body.take_damage(damage, knockback_dir * knock_force, dmg_type)
-			hit_count += 1
-			
-	if hit_count > 0:
-		add_camera_shake(0.18)
+	# Attack step / lunge
+	var fwd = -visual_root.global_transform.basis.z
+	velocity += fwd * 4.2
+	
+	# Initiate 3-stage combat pipeline: WINDUP -> ACTIVE -> RECOVERY
+	combat_stage = CombatStage.WINDUP
+	combat_stage_timer = 0.12
+	current_attack_dmg = damage
+	current_attack_knock = knock_force
+	current_attack_type = dmg_type
+	attack_hit_registered = false
 
 func try_heavy_attack() -> void:
 	if is_attacking or is_rolling or is_exhausted or stamina < heavy_attack_cost:
@@ -672,27 +752,54 @@ func try_heavy_attack() -> void:
 			knock_force = 32.0
 			spawn_text("💥 CRUSHING SLAM!", Color(1.0, 0.85, 0.2), 1.7)
 			
-	play_anim(anim_to_play)
+	play_anim(anim_to_play, 0.15, 1.0)
+	play_sfx(sfx_swing, 0.82, 0.94, 2.0)
 	add_camera_shake(0.45)
 	
+	# Heavy forward lunge
+	var fwd = -visual_root.global_transform.basis.z
+	velocity += fwd * 5.8
+	
+	combat_stage = CombatStage.WINDUP
+	combat_stage_timer = 0.18
+	current_attack_dmg = damage
+	current_attack_knock = knock_force
+	current_attack_type = dmg_type
+	attack_hit_registered = false
+
+func execute_active_hitbox() -> void:
 	var hit_count := 0
+	var fwd = -visual_root.global_transform.basis.z
+	
 	for body in attack_area.get_overlapping_bodies():
 		if body != self and body.has_method("take_damage"):
 			var knockback_dir := (body.global_position - global_position).normalized()
-			knockback_dir.y = 0.45
-			if body.has_method("apply_parry_stagger"):
+			knockback_dir.y = 0.38
+			
+			# Check parry stagger
+			if body.has_method("apply_parry_stagger") and current_attack_dmg > 75.0:
 				body.apply_parry_stagger(32.0)
-			body.take_damage(damage, knockback_dir * knock_force, dmg_type)
+				
+			body.take_damage(current_attack_dmg, knockback_dir * current_attack_knock, current_attack_type)
 			hit_count += 1
 			
+			# VFX & Audio impact
+			var spark_pos = body.global_position + Vector3(0, 1.0, 0)
+			spawn_sparks(spark_pos)
+			
 	if hit_count > 0:
-		add_camera_shake(0.35)
+		if current_attack_type == "blunt":
+			play_sfx(sfx_blunt, 0.9, 1.05)
+		else:
+			play_sfx(sfx_impact, 0.95, 1.1)
+		trigger_hit_stop(0.06)
+		add_camera_shake(0.25)
+		attack_hit_registered = true
 
 func handle_combat(delta: float) -> void:
 	if is_charging_heavy:
 		charge_timer += delta
 		if charge_timer >= max_charge_time:
-			# Flash particle or feedback
 			pass
 
 	if combo_reset_timer > 0.0:
@@ -700,10 +807,32 @@ func handle_combat(delta: float) -> void:
 		if combo_reset_timer <= 0.0:
 			combo_step = 0
 
+	# Attack Stage Pipeline
 	if is_attacking:
 		attack_timer -= delta
 		if attack_timer <= 0.0:
 			is_attacking = false
+			combat_stage = CombatStage.READY
+			
+		match combat_stage:
+			CombatStage.WINDUP:
+				combat_stage_timer -= delta
+				if combat_stage_timer <= 0.0:
+					combat_stage = CombatStage.ACTIVE
+					combat_stage_timer = 0.15
+					execute_active_hitbox()
+			CombatStage.ACTIVE:
+				combat_stage_timer -= delta
+				# Secondary check in case an enemy walked into the swing
+				if not attack_hit_registered:
+					execute_active_hitbox()
+				if combat_stage_timer <= 0.0:
+					combat_stage = CombatStage.RECOVERY
+					combat_stage_timer = 0.18
+			CombatStage.RECOVERY:
+				combat_stage_timer -= delta
+				if combat_stage_timer <= 0.0:
+					combat_stage = CombatStage.READY
 
 func receive_attack(amount: float, knockback: Vector3, attacker: Node3D) -> String:
 	if is_invincible:
@@ -714,8 +843,11 @@ func receive_attack(amount: float, knockback: Vector3, attacker: Node3D) -> Stri
 		if parry_timer > 0.0:
 			# PERFECT PARRY!
 			spawn_text("🛡️ PARRY!", Color(1.0, 0.85, 0.2), 1.6)
-			add_camera_shake(0.4)
-			play_anim("Block_Hit")
+			play_sfx(sfx_parry, 0.98, 1.04, 3.0)
+			trigger_hit_stop(0.08)
+			add_camera_shake(0.45)
+			play_anim("Block_Hit", 0.08)
+			spawn_sparks(global_position + Vector3(0, 1.0, 0.6))
 			if attacker != null and attacker.has_method("apply_parry_stagger"):
 				attacker.apply_parry_stagger(38.0)
 			return "PARRIED"
@@ -726,7 +858,8 @@ func receive_attack(amount: float, knockback: Vector3, attacker: Node3D) -> Stri
 			health_changed.emit(health, max_health)
 			consume_stamina(14.0)
 			velocity += knockback * 0.35
-			play_anim("Block_Hit")
+			play_anim("Block_Hit", 0.1)
+			play_sfx(sfx_block, 0.92, 1.05)
 			spawn_text("BLOCKED " + str(int(amount - blocked_dmg)), Color(0.7, 0.8, 0.9), 1.0)
 			return "BLOCKED"
 
@@ -735,7 +868,10 @@ func receive_attack(amount: float, knockback: Vector3, attacker: Node3D) -> Stri
 	health_changed.emit(health, max_health)
 	velocity += knockback
 	add_camera_shake(0.5)
-	play_anim("Hit_A")
+	trigger_hit_stop(0.05)
+	play_sfx(sfx_impact, 0.85, 0.95)
+	play_anim("Hit_A", 0.08)
+	spawn_sparks(global_position + Vector3(0, 1.0, 0))
 	spawn_text("-" + str(int(amount)), Color(1.0, 0.2, 0.2), 1.2)
 	
 	if health <= 0.0:
@@ -788,7 +924,8 @@ func fire_arrow() -> void:
 	
 	arrow.launch(cam_fwd, arrow_speed, arrow_dmg, self)
 	add_camera_shake(0.2)
-	play_anim("1H_Melee_Attack_Stab")
+	play_sfx(sfx_bow, 0.95, 1.05)
+	play_anim("1H_Melee_Attack_Stab", 0.08)
 	spawn_text("🏹 ARROW (%.0f dmg)" % arrow_dmg, Color(0.4, 0.95, 0.6), 1.1)
 
 func add_trophy(amount: int = 1) -> void:

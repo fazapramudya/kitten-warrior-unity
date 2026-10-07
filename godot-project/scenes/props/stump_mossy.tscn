@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/props/stump_mossy.glb" id="1_mesh"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_1"]
+height = 0.85
+radius = 0.55
+
+[node name="MossyStump" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_mesh")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+shape = SubResource("CylinderShape3D_1")

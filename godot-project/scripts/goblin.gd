@@ -68,9 +68,12 @@ func _physics_process(delta: float) -> void:
 					velocity.z = 0
 					
 			State.WINDUP:
-				# Pull spear back
+				# Pull spear back with telegraph
+				if state_timer == 0.0:
+					spawn_text("⚠️ THRUST!", Color(1.0, 0.4, 0.2), 1.2)
 				spear_pivot.rotation.x = deg_to_rad(-45.0)
 				spear_pivot.position.z = -0.3
+				visual_root.position.y = sin(state_timer * 12.0) * 0.04
 				if state_timer >= 0.55:
 					state = State.THRUST
 					state_timer = 0.0
@@ -144,6 +147,13 @@ func take_damage(amount: float, knockback: Vector3 = Vector3.ZERO, damage_type: 
 		
 	health -= final_amount
 	velocity = knockback
+	
+	# Flinch scale punch
+	var orig_scale = visual_root.scale
+	visual_root.scale = orig_scale * Vector3(1.22, 0.78, 1.22)
+	var tw = create_tween()
+	tw.tween_property(visual_root, "scale", orig_scale, 0.16)
+	
 	if health <= 0.0:
 		die()
 
@@ -155,9 +165,20 @@ func spawn_text(txt: String, col: Color, sz: float) -> void:
 
 func die() -> void:
 	died.emit()
+	collision_layer = 0
+	collision_mask = 0
+	velocity = Vector3.ZERO
+	spawn_text("💀 DEFEATED", Color(0.9, 0.85, 0.7), 1.4)
+	
 	if player != null and player.has_method("add_trophy"):
 		player.add_trophy(1)
 	var main_node = get_tree().current_scene
 	if main_node != null and main_node.has_method("on_enemy_killed"):
 		main_node.on_enemy_killed()
+		
+	# Fall backward death animation
+	var tw = create_tween()
+	tw.tween_property(visual_root, "rotation:x", deg_to_rad(90.0), 0.28)
+	tw.parallel().tween_property(visual_root, "position:y", -0.4, 0.28)
+	await get_tree().create_timer(1.8).timeout
 	queue_free()

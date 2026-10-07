@@ -1,4 +1,4 @@
-[gd_scene load_steps=39 format=3]
+[gd_scene load_steps=47 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
@@ -18,10 +18,12 @@
 [ext_resource type="PackedScene" path="res://scenes/props/boulder_b.tscn" id="16_boulder_b"]
 [ext_resource type="PackedScene" path="res://scenes/props/mushroom.tscn" id="17_mushroom"]
 [ext_resource type="PackedScene" path="res://scenes/props/boss_altar.tscn" id="18_boss_altar"]
+[ext_resource type="PackedScene" path="res://scenes/props/stump_mossy.tscn" id="19_stump"]
+[ext_resource type="PackedScene" path="res://scenes/props/log_large.tscn" id="20_log_large"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat_Valheim"]
-sky_top_color = Color(0.12, 0.24, 0.48, 1)
-sky_horizon_color = Color(0.98, 0.64, 0.32, 1)
+sky_top_color = Color(0.14, 0.28, 0.52, 1)
+sky_horizon_color = Color(0.98, 0.68, 0.36, 1)
 sky_curve = 0.08
 ground_bottom_color = Color(0.08, 0.12, 0.08, 1)
 ground_horizon_color = Color(0.24, 0.28, 0.22, 1)
@@ -35,23 +37,26 @@ sky_material = SubResource("SkyMat_Valheim")
 background_mode = 2
 sky = SubResource("Sky_Valheim")
 ambient_light_source = 3
-ambient_light_color = Color(0.72, 0.78, 0.85, 1)
-ambient_light_energy = 0.6
+ambient_light_color = Color(0.68, 0.74, 0.82, 1)
+ambient_light_energy = 0.58
 tonemap_mode = 3
-tonemap_exposure = 1.12
+tonemap_exposure = 1.14
 ssr_enabled = true
 ssao_enabled = true
-ssao_radius = 2.4
-ssao_intensity = 3.2
-ssao_power = 1.5
+ssao_radius = 2.6
+ssao_intensity = 3.4
+ssao_power = 1.4
 glow_enabled = true
-glow_intensity = 0.5
-glow_bloom = 0.35
+glow_intensity = 0.45
+glow_bloom = 0.28
 volumetric_fog_enabled = true
-volumetric_fog_density = 0.026
-volumetric_fog_albedo = Color(0.98, 0.86, 0.70, 1)
-volumetric_fog_emission = Color(0.18, 0.14, 0.08, 1)
-volumetric_fog_anisotropy = 0.65
+volumetric_fog_density = 0.024
+volumetric_fog_albedo = Color(0.98, 0.88, 0.72, 1)
+volumetric_fog_emission = Color(0.16, 0.12, 0.08, 1)
+volumetric_fog_anisotropy = 0.68
+adjustment_enabled = true
+adjustment_contrast = 1.08
+adjustment_saturation = 1.14
 
 [sub_resource type="BoxShape3D" id="Shape_Ground"]
 size = Vector3(220, 2, 220)
@@ -76,6 +81,26 @@ material = SubResource("Mat_CampClearing")
 top_radius = 9.5
 bottom_radius = 10.5
 height = 0.08
+
+[sub_resource type="CylinderShape3D" id="Shape_MoundLarge"]
+height = 1.8
+radius = 8.5
+
+[sub_resource type="CylinderMesh" id="Mesh_MoundLarge"]
+material = SubResource("Mat_ForestGround")
+top_radius = 6.0
+bottom_radius = 8.5
+height = 1.8
+
+[sub_resource type="CylinderShape3D" id="Shape_MoundRidge"]
+height = 2.4
+radius = 12.0
+
+[sub_resource type="CylinderMesh" id="Mesh_MoundRidge"]
+material = SubResource("Mat_ForestGround")
+top_radius = 8.5
+bottom_radius = 12.0
+height = 2.4
 
 [sub_resource type="ParticleProcessMaterial" id="Mat_PollenMotes"]
 emission_shape = 3
@@ -125,56 +150,75 @@ material = SubResource("Mat_FireflyDot")
 radius = 0.045
 height = 0.09
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_HUD_panel"]
-bg_color = Color(0.08, 0.07, 0.06, 0.88)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.45, 0.35, 0.22, 1)
+# UI STYLES
+[sub_resource type="StyleBoxFlat" id="StyleBox_GlassPanel"]
+bg_color = Color(0.06, 0.07, 0.09, 0.75)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.36, 0.24, 0.7)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_HP_bg"]
-bg_color = Color(0.18, 0.1, 0.1, 0.9)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBox_HP_fg"]
-bg_color = Color(0.85, 0.18, 0.18, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBox_PillBadge"]
+bg_color = Color(0.08, 0.09, 0.12, 0.8)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(1, 0.35, 0.35, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+border_color = Color(0.35, 0.38, 0.42, 0.5)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_Stam_fg"]
-bg_color = Color(0.95, 0.75, 0.12, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBox_BarBG"]
+bg_color = Color(0.07, 0.08, 0.1, 0.92)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(1, 0.88, 0.45, 1)
+border_color = Color(0.2, 0.22, 0.26, 0.75)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_Boss_fg"]
-bg_color = Color(0.85, 0.15, 0.15, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBox_HP_Ghost"]
+bg_color = Color(0.95, 0.82, 0.35, 0.75)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_HP_Fill"]
+bg_color = Color(0.85, 0.16, 0.18, 1)
+border_width_top = 1
+border_color = Color(1, 0.45, 0.45, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_Stam_Fill"]
+bg_color = Color(0.96, 0.76, 0.14, 1)
+border_width_top = 1
+border_color = Color(1, 0.9, 0.5, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_Boss_Fill"]
+bg_color = Color(0.88, 0.15, 0.15, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(1, 0.8, 0.2, 1)
+border_color = Color(1, 0.85, 0.3, 1)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
@@ -212,6 +256,47 @@ mesh = SubResource("Mesh_Ground")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04, -1.2)
 mesh = SubResource("Mesh_CampClearing")
 
+[node name="TerrainContour" type="Node3D" parent="."]
+
+[node name="MoundNorth" type="StaticBody3D" parent="TerrainContour"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, -0.4, -22)
+collision_layer = 1
+collision_mask = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TerrainContour/MoundNorth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_MoundLarge")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="TerrainContour/MoundNorth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("Mesh_MoundLarge")
+
+[node name="MoundWest" type="StaticBody3D" parent="TerrainContour"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26, -0.3, 4)
+collision_layer = 1
+collision_mask = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TerrainContour/MoundWest"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_MoundLarge")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="TerrainContour/MoundWest"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("Mesh_MoundLarge")
+
+[node name="MoundAltarRidge" type="StaticBody3D" parent="TerrainContour"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, -0.6, 22)
+collision_layer = 1
+collision_mask = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TerrainContour/MoundAltarRidge"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("Shape_MoundRidge")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="TerrainContour/MoundAltarRidge"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+mesh = SubResource("Mesh_MoundRidge")
+
 [node name="PollenParticles" type="GPUParticles3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 0)
 amount = 96
@@ -246,12 +331,18 @@ transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, -6, 0, -28)
 transform = Transform3D(0.9, 0, 0.8, 0, 1.1, 0, -0.8, 0, 0.9, 14, 0, -26)
 
 [node name="CliffWest" parent="Cliffs" instance=ExtResource("9_cliff")]
-transform = Transform3D(0, 0, 1.3, 0, 1.2, 0, -1.3, 0, 0, -30, 0, -4)
+transform = Transform3D(0, 0, 1.3, 0, 1.2, 0, -1.3, 0, 0, -32, 0, -4)
 
 [node name="CliffEast" parent="Cliffs" instance=ExtResource("9_cliff")]
-transform = Transform3D(0, 0, -1.2, 0, 1.1, 0, 1.2, 0, 0, 32, 0, 8)
+transform = Transform3D(0, 0, -1.2, 0, 1.1, 0, 1.2, 0, 0, 34, 0, 8)
 
 [node name="TimberAndStumps" type="Node3D" parent="."]
+
+[node name="StumpForeground" parent="TimberAndStumps" instance=ExtResource("19_stump")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 4.2)
+
+[node name="LogForeground" parent="TimberAndStumps" instance=ExtResource("20_log_large")]
+transform = Transform3D(0.866025, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866025, -3.8, 0, 4.8)
 
 [node name="Timber1" parent="TimberAndStumps" instance=ExtResource("8_timber")]
 transform = Transform3D(0.965926, 0, 0.258819, 0, 1, 0, -0.258819, 0, 0.965926, 8, 0, -8)
@@ -298,287 +389,388 @@ transform = Transform3D(1.4, 0, 0, 0, 1.3, 0, 0, 0, 1.4, 28, 0, 18)
 transform = Transform3D(1.3, 0, 0.3, 0, 1.3, 0, -0.3, 0, 1.3, 13, 0, -8)
 
 [node name="Spruce2" parent="ForestCanopy" instance=ExtResource("13_spruce")]
-transform = Transform3D(1.1, 0, -0.4, 0, 1.2, 0, 0.4, 0, 1.1, -16, 0, -4)
+transform = Transform3D(1.1, 0, -0.4, 0, 1.2, 0, 0.4, 0, 1.1, -16, 0, 12)
 
 [node name="Spruce3" parent="ForestCanopy" instance=ExtResource("13_spruce")]
-transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, -6, 0, 16)
-
-[node name="Spruce4" parent="ForestCanopy" instance=ExtResource("13_spruce")]
-transform = Transform3D(1.2, 0, 0.5, 0, 1.2, 0, -0.5, 0, 1.2, 22, 0, 2)
-
-[node name="Spruce5" parent="ForestCanopy" instance=ExtResource("13_spruce")]
-transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, -26, 0, 4)
-
-[node name="Spruce6" parent="ForestCanopy" instance=ExtResource("13_spruce")]
-transform = Transform3D(1.4, 0, -0.3, 0, 1.5, 0, 0.3, 0, 1.4, 16, 0, -28)
+transform = Transform3D(1.4, 0, 0, 0, 1.3, 0, 0, 0, 1.4, 22, 0, -6)
 
 [node name="PineMed1" parent="ForestCanopy" instance=ExtResource("11_pine")]
-transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 7, 0, 8)
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 6, 0, -18)
 
 [node name="PineMed2" parent="ForestCanopy" instance=ExtResource("11_pine")]
-transform = Transform3D(0.9, 0, 0.3, 0, 1.0, 0, -0.3, 0, 0.9, -10, 0, 11)
+transform = Transform3D(1.1, 0, 0.2, 0, 1.2, 0, -0.2, 0, 1.1, -18, 0, -18)
 
 [node name="PineMed3" parent="ForestCanopy" instance=ExtResource("11_pine")]
-transform = Transform3D(1.2, 0, -0.2, 0, 1.2, 0, 0.2, 0, 1.2, 19, 0, -6)
-
-[node name="PineMed4" parent="ForestCanopy" instance=ExtResource("11_pine")]
-transform = Transform3D(1.0, 0, 0, 0, 1.1, 0, 0, 0, 1.0, -18, 0, 22)
-
-[node name="PineMed5" parent="ForestCanopy" instance=ExtResource("11_pine")]
-transform = Transform3D(1.3, 0, 0, 0, 1.2, 0, 0, 0, 1.3, 2, 0, -18)
-
-[node name="Sapling1" parent="ForestCanopy" instance=ExtResource("14_sapling")]
-transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 5, 0, 6)
-
-[node name="Sapling2" parent="ForestCanopy" instance=ExtResource("14_sapling")]
-transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, -7, 0, 4)
-
-[node name="Sapling3" parent="ForestCanopy" instance=ExtResource("14_sapling")]
-transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 8, 0, -4)
-
-[node name="Sapling4" parent="ForestCanopy" instance=ExtResource("14_sapling")]
-transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, -4, 0, -8)
-
-[node name="Sapling5" parent="ForestCanopy" instance=ExtResource("14_sapling")]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 12, 0, 18)
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, 24, 0, 8)
 
 [node name="Boulders" type="Node3D" parent="."]
 
 [node name="BoulderA1" parent="Boulders" instance=ExtResource("15_boulder_a")]
-transform = Transform3D(1.2, 0, 0, 0, 1.1, 0, 0, 0, 1.2, 7, 0, 3)
-
-[node name="BoulderB1" parent="Boulders" instance=ExtResource("16_boulder_b")]
-transform = Transform3D(1.4, 0, 0.3, 0, 1.2, 0, -0.3, 0, 1.3, -9, 0, -3)
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, 7, 0, 5)
 
 [node name="BoulderA2" parent="Boulders" instance=ExtResource("15_boulder_a")]
-transform = Transform3D(1.0, 0, 0, 0, 0.9, 0, 0, 0, 1.0, 4, 0, -7)
+transform = Transform3D(1.1, 0, 0.4, 0, 1.2, 0, -0.4, 0, 1.1, -9, 0, -5)
+
+[node name="BoulderB1" parent="Boulders" instance=ExtResource("16_boulder_b")]
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, -6, 0, 14)
 
 [node name="BoulderB2" parent="Boulders" instance=ExtResource("16_boulder_b")]
-transform = Transform3D(1.3, 0, 0, 0, 1.1, 0, 0, 0, 1.3, -15, 0, 8)
-
-[node name="BoulderA3" parent="Boulders" instance=ExtResource("15_boulder_a")]
-transform = Transform3D(1.5, 0, 0, 0, 1.4, 0, 0, 0, 1.5, 21, 0, 8)
-
-[node name="BoulderB3" parent="Boulders" instance=ExtResource("16_boulder_b")]
-transform = Transform3D(1.6, 0, -0.4, 0, 1.3, 0, 0.4, 0, 1.5, -20, 0, -18)
+transform = Transform3D(1.2, 0, -0.3, 0, 1.2, 0, 0.3, 0, 1.2, 18, 0, -12)
 
 [node name="FoliageUndergrowth" type="Node3D" parent="."]
 
+[node name="PatchForeground" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, 1.2, 0, 3.6)
+
 [node name="Patch1" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
-transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 3, 0, 4)
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 4, 0, -3)
 
 [node name="Patch2" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
-transform = Transform3D(1.1, 0, 0.3, 0, 1.1, 0, -0.3, 0, 1.1, -4, 0, 3)
+transform = Transform3D(1.1, 0, 0.3, 0, 1.1, 0, -0.3, 0, 1.1, -5, 0, 2)
 
 [node name="Patch3" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
-transform = Transform3D(1.3, 0, -0.2, 0, 1.3, 0, 0.2, 0, 1.3, 5, 0, -5)
+transform = Transform3D(1.3, 0, -0.2, 0, 1.3, 0, 0.2, 0, 1.3, 6, 0, 7)
 
 [node name="Patch4" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
-transform = Transform3D(1.0, 0, 0.4, 0, 1.0, 0, -0.4, 0, 1.0, -5, 0, -6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, 8)
 
 [node name="Patch5" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
-transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 9, 0, 7)
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 11, 0, -6)
 
 [node name="Patch6" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
-transform = Transform3D(1.2, 0, -0.3, 0, 1.2, 0, 0.3, 0, 1.2, -11, 0, 5)
-
-[node name="Patch7" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
-transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 12, 0, -10)
-
-[node name="Patch8" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
-transform = Transform3D(1.3, 0, 0.2, 0, 1.3, 0, -0.2, 0, 1.3, -13, 0, -9)
-
-[node name="Patch9" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
-transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 16, 0, 5)
-
-[node name="Patch10" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
-transform = Transform3D(1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0, -8, 0, 14)
-
-[node name="Patch11" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
-transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, 1, 0, 12)
-
-[node name="Patch12" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
-transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 0, 0, -12)
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -11, 0, -7)
 
 [node name="Mushroom1" parent="FoliageUndergrowth" instance=ExtResource("17_mushroom")]
-transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, 2.2, 0, 1.8)
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 3.5, 0, -2.5)
 
 [node name="Mushroom2" parent="FoliageUndergrowth" instance=ExtResource("17_mushroom")]
-transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, -2.6, 0, 1.2)
-
-[node name="Mushroom3" parent="FoliageUndergrowth" instance=ExtResource("17_mushroom")]
-transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, -3.0, 0, -5.5)
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -4.5, 0, 4)
 
 [node name="Player" parent="." instance=ExtResource("2_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 3.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 3)
 
-[node name="SkeletonWarrior" parent="." instance=ExtResource("5_skeleton")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.5, -9)
+[node name="Skeleton1" parent="." instance=ExtResource("5_skeleton")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, -10)
 
 [node name="Goblin1" parent="." instance=ExtResource("4_goblin")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0.5, -12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, -6)
 
 [node name="Slime1" parent="." instance=ExtResource("3_slime")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0.5, 8)
 
 [node name="BossAltar" parent="." instance=ExtResource("18_boss_altar")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, 0, 22)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, 1.2, 22)
 
 [node name="HUD" type="CanvasLayer" parent="."]
 
-[node name="MarginContainer" type="MarginContainer" parent="HUD"]
+[node name="RootUI" type="Control" parent="HUD"]
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 28
-theme_override_constants/margin_top = 28
-theme_override_constants/margin_right = 28
-theme_override_constants/margin_bottom = 28
 
-[node name="PanelContainer" type="PanelContainer" parent="HUD/MarginContainer"]
+[node name="PlayerStatusHUD" type="MarginContainer" parent="HUD/RootUI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -170.0
+offset_right = 360.0
+grow_vertical = 0
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_bottom = 26
+
+[node name="PlayerCard" type="PanelContainer" parent="HUD/RootUI/PlayerStatusHUD"]
 layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
-theme_override_styles/panel = SubResource("StyleBox_HUD_panel")
+theme_override_styles/panel = SubResource("StyleBox_GlassPanel")
 
-[node name="Margin" type="MarginContainer" parent="HUD/MarginContainer/PanelContainer"]
+[node name="CardMargin" type="MarginContainer" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard"]
 layout_mode = 2
 theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 14
+theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 14
+theme_override_constants/margin_bottom = 12
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HUD/MarginContainer/PanelContainer/Margin"]
-custom_minimum_size = Vector2(300, 0)
+[node name="VBox" type="VBoxContainer" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="FoodRow" type="HBoxContainer" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="TitleRow" type="HBoxContainer" parent="HUD/MarginContainer/PanelContainer/Margin/VBoxContainer"]
+[node name="FoodMeat" type="PanelContainer" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox/FoodRow"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_PillBadge")
+
+[node name="Margin" type="MarginContainer" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox/FoodRow/FoodMeat"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 2
+
+[node name="Label" type="Label" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox/FoodRow/FoodMeat/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.75, 0.65, 1)
+theme_override_font_sizes/font_size = 11
+text = "🍖 MEAT +35"
+
+[node name="FoodShroom" type="PanelContainer" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox/FoodRow"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_PillBadge")
+
+[node name="Margin" type="MarginContainer" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox/FoodRow/FoodShroom"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 2
+
+[node name="Label" type="Label" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox/FoodRow/FoodShroom/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 11
+text = "🍄 SHROOM +25"
+
+[node name="FoodBerry" type="PanelContainer" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox/FoodRow"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_PillBadge")
+
+[node name="Margin" type="MarginContainer" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox/FoodRow/FoodBerry"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 2
+
+[node name="Label" type="Label" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox/FoodRow/FoodBerry/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 11
+text = "🫐 BERRY +20"
+
+[node name="HPOverlay" type="Control" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox"]
+custom_minimum_size = Vector2(280, 20)
 layout_mode = 2
 
-[node name="Title" type="Label" parent="HUD/MarginContainer/PanelContainer/Margin/VBoxContainer/TitleRow"]
+[node name="HealthGhostBar" type="ProgressBar" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox/HPOverlay"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/background = SubResource("StyleBox_BarBG")
+theme_override_styles/fill = SubResource("StyleBox_HP_Ghost")
+value = 100.0
+show_percentage = false
+
+[node name="HealthBar" type="ProgressBar" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox/HPOverlay"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/background = SubResource("StyleBox_BarBG")
+theme_override_styles/fill = SubResource("StyleBox_HP_Fill")
+value = 100.0
+show_percentage = false
+
+[node name="HealthNumLabel" type="Label" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox/HPOverlay"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.9, 1)
+theme_override_font_sizes/font_size = 12
+text = "100 / 100"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StaminaOverlay" type="Control" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox"]
+custom_minimum_size = Vector2(280, 16)
+layout_mode = 2
+
+[node name="StaminaBar" type="ProgressBar" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox/StaminaOverlay"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/background = SubResource("StyleBox_BarBG")
+theme_override_styles/fill = SubResource("StyleBox_Stam_Fill")
+value = 100.0
+show_percentage = false
+
+[node name="StaminaNumLabel" type="Label" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox/StaminaOverlay"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.2, 0.16, 0.05, 1)
+theme_override_font_sizes/font_size = 11
+text = "80 / 80"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FooterRow" type="HBoxContainer" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox"]
+layout_mode = 2
+
+[node name="WeaponBadge" type="Label" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox/FooterRow"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
-theme_override_font_sizes/font_size = 18
-text = "🐾 KITTEN WARRIOR"
+theme_override_colors/font_color = Color(1, 0.88, 0.6, 1)
+theme_override_font_sizes/font_size = 12
+text = "⚔️ [1] Sword & Shield"
 
-[node name="StatusLabel" type="Label" parent="HUD/MarginContainer/PanelContainer/Margin/VBoxContainer/TitleRow"]
+[node name="StatusLabel" type="Label" parent="HUD/RootUI/PlayerStatusHUD/PlayerCard/CardMargin/VBox/FooterRow"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.9, 0.6, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 12
 text = "🛡️ RESTED"
 
-[node name="HealthLabel" type="Label" parent="HUD/MarginContainer/PanelContainer/Margin/VBoxContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.6, 0.6, 1)
-theme_override_font_sizes/font_size = 12
-text = "HEALTH"
+[node name="ObjectiveHUD" type="MarginContainer" parent="HUD/RootUI"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -260.0
+offset_bottom = 100.0
+grow_horizontal = 0
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
 
-[node name="HealthBar" type="ProgressBar" parent="HUD/MarginContainer/PanelContainer/Margin/VBoxContainer"]
-custom_minimum_size = Vector2(280, 22)
+[node name="ObjectiveCard" type="PanelContainer" parent="HUD/RootUI/ObjectiveHUD"]
 layout_mode = 2
-theme_override_styles/background = SubResource("StyleBox_HP_bg")
-theme_override_styles/fill = SubResource("StyleBox_HP_fg")
-value = 100.0
-show_percentage = false
+theme_override_styles/panel = SubResource("StyleBox_GlassPanel")
 
-[node name="StaminaLabel" type="Label" parent="HUD/MarginContainer/PanelContainer/Margin/VBoxContainer"]
+[node name="Margin" type="MarginContainer" parent="HUD/RootUI/ObjectiveHUD/ObjectiveCard"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.85, 0.5, 1)
-theme_override_font_sizes/font_size = 12
-text = "STAMINA"
-
-[node name="StaminaBar" type="ProgressBar" parent="HUD/MarginContainer/PanelContainer/Margin/VBoxContainer"]
-custom_minimum_size = Vector2(280, 18)
-layout_mode = 2
-theme_override_styles/background = SubResource("StyleBox_HP_bg")
-theme_override_styles/fill = SubResource("StyleBox_Stam_fg")
-value = 100.0
-show_percentage = false
-
-[node name="KillLabel" type="Label" parent="HUD/MarginContainer/PanelContainer/Margin/VBoxContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
-theme_override_font_sizes/font_size = 16
-text = "⚔️ Kills: 0"
-
-[node name="TrophyLabel" type="Label" parent="HUD/MarginContainer/PanelContainer/Margin/VBoxContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.8, 0.2, 1)
-theme_override_font_sizes/font_size = 14
-text = "🏆 Trophies: 0/3 (Untuk Altar)"
-
-[node name="BossPanel" type="PanelContainer" parent="HUD/MarginContainer"]
-visible = false
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 0
-theme_override_styles/panel = SubResource("StyleBox_HUD_panel")
-
-[node name="BossMargin" type="MarginContainer" parent="HUD/MarginContainer/BossPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 20
+theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 10
 
-[node name="BossVBox" type="VBoxContainer" parent="HUD/MarginContainer/BossPanel/BossMargin"]
-custom_minimum_size = Vector2(460, 0)
+[node name="VBox" type="VBoxContainer" parent="HUD/RootUI/ObjectiveHUD/ObjectiveCard/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 
-[node name="BossTitle" type="Label" parent="HUD/MarginContainer/BossPanel/BossMargin/BossVBox"]
+[node name="TrophyLabel" type="Label" parent="HUD/RootUI/ObjectiveHUD/ObjectiveCard/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "🏆 Trophies: 0/3 (Altar Rimba)"
+
+[node name="KillLabel" type="Label" parent="HUD/RootUI/ObjectiveHUD/ObjectiveCard/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.8, 0.75, 1)
+theme_override_font_sizes/font_size = 12
+text = "⚔️ Foes Slain: 0"
+
+[node name="BossPanel" type="PanelContainer" parent="HUD/RootUI"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -230.0
+offset_top = 22.0
+offset_right = 230.0
+offset_bottom = 74.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBox_GlassPanel")
+
+[node name="BossMargin" type="MarginContainer" parent="HUD/RootUI/BossPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 10
+
+[node name="BossVBox" type="VBoxContainer" parent="HUD/RootUI/BossPanel/BossMargin"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="BossTitle" type="Label" parent="HUD/RootUI/BossPanel/BossMargin/BossVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
-theme_override_font_sizes/font_size = 15
-text = "👑 TITAN OF THE BLACK FOREST - ANCIENT FOREST BEAST"
+theme_override_font_sizes/font_size = 14
+text = "👑 ANCIENT FOREST BEAST"
 horizontal_alignment = 1
 
-[node name="BossHealthBar" type="ProgressBar" parent="HUD/MarginContainer/BossPanel/BossMargin/BossVBox"]
-custom_minimum_size = Vector2(460, 22)
+[node name="BossHealthBar" type="ProgressBar" parent="HUD/RootUI/BossPanel/BossMargin/BossVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(420, 16)
 layout_mode = 2
-theme_override_styles/background = SubResource("StyleBox_HP_bg")
-theme_override_styles/fill = SubResource("StyleBox_Boss_fg")
+theme_override_styles/background = SubResource("StyleBox_BarBG")
+theme_override_styles/fill = SubResource("StyleBox_Boss_Fill")
 max_value = 850.0
 value = 850.0
 show_percentage = false
 
-[node name="Crosshair" type="Label" parent="HUD"]
+[node name="Crosshair" type="Label" parent="HUD/RootUI"]
+layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
+offset_left = -10.0
+offset_top = -14.0
+offset_right = 10.0
+offset_bottom = 14.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.6)
-theme_override_font_sizes/font_size = 28
-text = "+"
+theme_override_font_sizes/font_size = 18
+text = "·"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ControlsPanel" type="PanelContainer" parent="HUD/MarginContainer"]
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 8
-theme_override_styles/panel = SubResource("StyleBox_HUD_panel")
+[node name="ControlsPanel" type="PanelContainer" parent="HUD/RootUI"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_top = -42.0
+offset_right = 260.0
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBox_PillBadge")
 
-[node name="ControlsMargin" type="MarginContainer" parent="HUD/MarginContainer/ControlsPanel"]
+[node name="Margin" type="MarginContainer" parent="HUD/RootUI/ControlsPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 4
 
-[node name="ControlsLabel" type="Label" parent="HUD/MarginContainer/ControlsPanel/ControlsMargin"]
+[node name="Label" type="Label" parent="HUD/RootUI/ControlsPanel/Margin"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.9, 0.8, 0.9)
-theme_override_font_sizes/font_size = 13
-text = "WASD: Gerak | SHIFT: Sprint | SPASI: Dodge | [1] Pedang [2] Tombak [3] Gada [4] Busur | TAHAN LMB: Charge/Bidik | E: Ritual Altar"
+theme_override_colors/font_color = Color(0.85, 0.82, 0.75, 0.85)
+theme_override_font_sizes/font_size = 11
+text = "WASD Gerak  |  Shift Sprint  |  Q Dodge  |  LMB Serang  |  RMB Guard/Parry  |  [1-4] Senjata  |  E Altar"
+horizontal_alignment = 1
