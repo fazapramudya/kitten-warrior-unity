@@ -17,6 +17,11 @@ var health: float = 100.0
 # Valheim Stamina System
 @export var max_stamina: float = 100.0
 var stamina: float = 100.0
+var base_max_health: float = 80.0
+var base_max_stamina: float = 80.0
+var active_foods: Array = [] # Array of Dictionary {name, hp, stamina, time_left}
+var is_near_fire: bool = false
+var is_cold: bool = false
 @export var sprint_cost_per_sec: float = 16.0
 @export var jump_stamina_cost: float = 10.0
 @export var roll_stamina_cost: float = 16.0
@@ -229,12 +234,65 @@ func consume_stamina(amount: float) -> void:
 		spawn_text("EXHAUSTED!", Color(1.0, 0.4, 0.2), 1.2)
 	stamina_changed.emit(stamina, max_stamina)
 
+func consume_food(f_name: String, hp_buff: float, stam_buff: float, dur: float) -> void:
+	# Keep up to 3 distinct food items (Valheim food limit)
+	for f in active_foods:
+		if f.name == f_name:
+			f.time_left = dur
+			recalculate_food_buffs()
+			return
+			
+	if active_foods.size() >= 3:
+		active_foods.pop_front()
+		
+	active_foods.append({
+		"name": f_name,
+		"hp": hp_buff,
+		"stamina": stam_buff,
+		"time_left": dur
+	})
+	recalculate_food_buffs()
+	health = min(max_health, health + hp_buff * 0.5)
+	health_changed.emit(health, max_health)
+	stamina_changed.emit(stamina, max_stamina)
+
+func recalculate_food_buffs() -> void:
+	var extra_hp := 0.0
+	var extra_stam := 0.0
+	for f in active_foods:
+		extra_hp += f.hp
+		extra_stam += f.stamina
+	max_health = base_max_health + extra_hp
+	max_stamina = base_max_stamina + extra_stam
+	health = min(health, max_health)
+	stamina = min(stamina, max_stamina)
+	health_changed.emit(health, max_health)
+	stamina_changed.emit(stamina, max_stamina)
+
+func update_food_timers(delta: float) -> void:
+	var changed := false
+	for i in range(active_foods.size() - 1, -1, -1):
+		active_foods[i].time_left -= delta
+		if active_foods[i].time_left <= 0.0:
+			spawn_text("BUFF EXPIRED: " + active_foods[i].name, Color(0.8, 0.7, 0.6), 1.0)
+			active_foods.remove_at(i)
+			changed = true
+	if changed:
+		recalculate_food_buffs()
+
 func handle_stamina(delta: float) -> void:
+	update_food_timers(delta)
+	
 	if regen_timer > 0.0:
 		regen_timer -= delta
 	else:
 		if stamina < max_stamina:
-			stamina = min(max_stamina, stamina + stamina_regen_rate * delta)
+			var current_regen := stamina_regen_rate
+			if is_near_fire:
+				current_regen *= 2.0 # Rested buff (+100%)
+			elif is_cold:
+				current_regen *= 0.55 # Cold debuff (-45%)
+			stamina = min(max_stamina, stamina + current_regen * delta)
 			stamina_changed.emit(stamina, max_stamina)
 			if is_exhausted and stamina >= 22.0:
 				is_exhausted = false
@@ -300,6 +358,8 @@ func receive_attack(amount: float, knockback: Vector3, attacker: Node3D) -> Stri
 			spawn_text("🛡️ PARRY!", Color(1.0, 0.85, 0.2), 1.6)
 			add_camera_shake(0.4)
 			play_anim("Block_Hit")
+			if attacker != null and attacker.has_method("apply_parry_stagger"):
+				attacker.apply_parry_stagger(38.0)
 			return "PARRIED"
 		else:
 			# Normal Block

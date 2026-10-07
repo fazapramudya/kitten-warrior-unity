@@ -21,6 +21,10 @@ var anim_player: AnimationPlayer = null
 var is_dead: bool = false
 var is_attacking: bool = false
 var attack_cooldown: float = 0.0
+var stagger_meter: float = 0.0
+var max_stagger: float = 40.0
+var is_staggered: bool = false
+var stagger_timer: float = 0.0
 var floating_text_scene = preload("res://scenes/floating_text.tscn")
 
 func _ready() -> void:
@@ -35,6 +39,16 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
+		
+	if is_staggered:
+		stagger_timer -= delta
+		if stagger_timer <= 0.0:
+			is_staggered = false
+			stagger_meter = 0.0
+		return
+
+	if stagger_meter > 0.0 and not is_staggered:
+		stagger_meter = max(0.0, stagger_meter - delta * 8.0)
 		
 	if not is_on_floor():
 		velocity.y -= gravity * delta
@@ -100,13 +114,38 @@ func perform_attack() -> void:
 	await get_tree().create_timer(0.5).timeout
 	is_attacking = false
 
+func apply_parry_stagger(amount: float) -> void:
+	if is_dead:
+		return
+	stagger_meter += amount
+	if stagger_meter >= max_stagger or not is_staggered:
+		trigger_stagger()
+
+func trigger_stagger() -> void:
+	is_staggered = true
+	stagger_timer = 2.2
+	is_attacking = false
+	velocity = -transform.basis.z * 5.0
+	spawn_text("⚡ STAGGERED! (2x CRIT)", Color(1.0, 0.9, 0.2), 1.5)
+	if anim_player != null and anim_player.has_animation("Hit_A"):
+		anim_player.play("Hit_A")
+
 func take_damage(amount: float, knockback: Vector3 = Vector3.ZERO) -> void:
 	if is_dead:
 		return
 		
-	health -= amount
+	var final_dmg := amount
+	if is_staggered:
+		final_dmg *= 2.0 # Valheim 2x Critical Damage window!
+		spawn_text("CRIT %d!" % int(final_dmg), Color(1.0, 0.3, 0.1), 1.6)
+	else:
+		stagger_meter += amount * 0.45
+		if stagger_meter >= max_stagger:
+			trigger_stagger()
+		spawn_text(str(int(final_dmg)), Color(1.0, 0.85, 0.3), 1.1)
+		
+	health -= final_dmg
 	velocity = knockback
-	spawn_text(str(int(amount)), Color(1.0, 0.85, 0.3), 1.1)
 	
 	if anim_player != null and not is_attacking and anim_player.has_animation("Hit_A"):
 		anim_player.play("Hit_A")

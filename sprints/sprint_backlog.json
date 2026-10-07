@@ -1,0 +1,88 @@
+{
+  "project": "Kitten Warrior",
+  "vision": "3D Third-Person Action RPG inspired by Valheim (Iron Gate Studios) with a Cat Knight protagonist",
+  "current_sprint": 1,
+  "sprints": [
+    {
+      "id": 1,
+      "title": "Valheim Survival Loop: Day/Night Cycle, Food Buffs, Interactive Tree Chopping & Stagger Combat",
+      "status": "in_progress",
+      "pillars": [
+        "Dynamic Day/Night lighting and atmosphere (dawn, day, sunset, cold night)",
+        "Valheim-style food system (eat up to 3 foods for max HP and Stamina boosts)",
+        "Chopping pine trees for wood resources with shaking and falling physics",
+        "Tactical combat with enemy stagger meter and parry vulnerability window"
+      ],
+      "assignments": {
+        "worker-1-gameplay": {
+          "role": "Lead Gameplay & Character Engineer",
+          "tasks": [
+            "Implement food consumption logic (keys 1, 2, 3 or E interact) applying duration-based HP/Stamina buffs",
+            "Implement tree chopping action when hitting trees with weapon",
+            "Integrate Cold debuff (reduced stamina regen at night when away from campfire)",
+            "Update player HUD status (Food bar buffs, Cold / Rested icons)"
+          ]
+        },
+        "worker-2-combatai": {
+          "role": "Combat & Monster AI Specialist",
+          "tasks": [
+            "Implement enemy posture / stagger meter (fills when hit or parried; when maxed, enemy is stunned)",
+            "Add 2.0x damage vulnerability window during staggered state",
+            "Increase enemy aggression and sight range during night time",
+            "Add night spawn reinforcements (tougher nocturnal skeletons)"
+          ]
+        },
+        "worker-3-systems": {
+          "role": "Systems & Data Architect",
+          "tasks": [
+            "Create Day/Night cycle controller (smooth sun rotation, sky procedural color blending, ambient shift)",
+            "Create interactive Tree Entity (durability HP, wobble shake animation, falling log spawn, wood drop)",
+            "Add forest floor collectible food items (Red Mushrooms, Forest Berries)",
+            "Create campfire Rested buff area detection"
+          ]
+        },
+        "worker-4-qa-reviewer": {
+          "role": "Code Reviewer & Integration Specialist",
+          "tasks": [
+            "Review GDScript syntax, references, and node paths across all touched scenes",
+            "Run git stage and commit with conventional semantic commit message",
+            "Trigger and monitor GitHub Actions CI (godot-build.yml)",
+            "Download, verify (unzip -l), and deploy KittenWarrior-Godot4-Windows-x64.zip",
+            "Update web prototype portal at port 8080"
+          ]
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Deep Tactical Combat & Weapon Arsenal",
+      "status": "planned",
+      "pillars": [
+        "Heavy attack charged swing with high stamina cost and massive stagger",
+        "Flint Spear and Wooden Club weapon switching",
+        "Damage types: Slashing, Blunt, and Piercing with elemental vulnerabilities",
+        "Bow and arrow ranged hunting mechanics"
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Biome Boss Summoning & The Black Forest Altar",
+      "status": "planned",
+      "pillars": [
+        "Ancient altar requiring trophy sacrifices to summon boss",
+        "Forest Beast boss with thunder stomp, horn charge, and summon minions",
+        "Cinematic boss health bar and triumphant Nordic victory anthem"
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Shelter Building, Crafting & Workbench Progression",
+      "status": "planned",
+      "pillars": [
+        "Building hammer with grid snapping for wood walls, floors, and thatched roofs",
+        "Workbench crafting stations with progression tiers (Stone -> Bronze -> Iron)",
+        "Smoke accumulation physics requiring chimneys to prevent smoke suffocation"
+      ]
+    }
+  ]
+}
