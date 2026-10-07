@@ -5,31 +5,44 @@ signal died
 @export var max_health: float = 60.0
 var health: float = 60.0
 
-@export var hop_force: float = 5.5
-@export var move_speed: float = 3.5
+@export var hop_force: float = 6.2
+@export var move_speed: float = 4.0
 @export var aggro_distance: float = 16.0
 
 var player: CharacterBody3D = null
 var hop_timer: float = 0.0
-var hop_interval: float = 1.2
+var hop_interval: float = 1.1
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 18.0)
 
-@onready var mesh_instance: MeshInstance3D = $MeshInstance3D
+@onready var visual_root: Node3D = $VisualRoot
+@onready var mesh_instance: MeshInstance3D = $VisualRoot/BodyMesh
+@onready var death_particles: GPUParticles3D = $DeathParticles
+
 var flash_timer: float = 0.0
+var floating_text_scene = preload("res://scenes/floating_text.tscn")
+var is_dead: bool = false
 
 func _ready() -> void:
 	health = max_health
 	player = get_tree().get_first_node_in_group("player")
-	hop_interval = randf_range(0.9, 1.4)
+	hop_interval = randf_range(0.85, 1.3)
 
 func _physics_process(delta: float) -> void:
+	if is_dead:
+		return
+		
 	if not is_on_floor():
 		velocity.y -= gravity * delta
+		# Stretch in air
+		visual_root.scale = visual_root.scale.lerp(Vector3(0.85, 1.25, 0.85), 10.0 * delta)
+	else:
+		# Squash on land
+		visual_root.scale = visual_root.scale.lerp(Vector3(1.15, 0.85, 1.15), 12.0 * delta)
 
-	# Hit flash effect decay
+	# Flash decay
 	if flash_timer > 0.0:
 		flash_timer -= delta
-		if flash_timer <= 0.0 and mesh_instance.material_override != null:
+		if flash_timer <= 0.0:
 			mesh_instance.material_override = null
 
 	# AI Logic
@@ -37,49 +50,75 @@ func _physics_process(delta: float) -> void:
 		player = get_tree().get_first_node_in_group("player")
 		
 	if player != null:
-		var dist_to_player := global_position.distance_to(player.global_position)
-		if dist_to_player < aggro_distance:
+		var dist := global_position.distance_to(player.global_position)
+		if dist < aggro_distance:
 			hop_timer += delta
 			if hop_timer >= hop_interval and is_on_floor():
 				hop_timer = 0.0
-				# Hop toward player
 				var dir := (player.global_position - global_position).normalized()
 				dir.y = 0.0
 				velocity.x = dir.x * move_speed
 				velocity.z = dir.z * move_speed
 				velocity.y = hop_force
 				
-				# Face the player
-				look_at(Vector3(player.global_position.x, global_position.y, player.global_position.z), Vector3.UP)
+				# Look towards player
+				var target_pos = Vector3(player.global_position.x, global_position.y, player.global_position.z)
+				look_at(target_pos, Vector3.UP)
 		else:
-			# Friction when idle
 			if is_on_floor():
 				velocity.x = move_toward(velocity.x, 0.0, 5.0 * delta)
 				velocity.z = move_toward(velocity.z, 0.0, 5.0 * delta)
 
 	# Damage player on contact
 	if is_on_floor() and player != null:
-		if global_position.distance_to(player.global_position) < 1.3:
-			player.take_damage(12.0, (player.global_position - global_position).normalized() * 6.0)
+		if global_position.distance_to(player.global_position) < 1.4:
+			var knock := (player.global_position - global_position).normalized() * 6.5
+			player.receive_attack(14.0, knock, self)
 
 	move_and_slide()
 
 func take_damage(amount: float, knockback: Vector3 = Vector3.ZERO) -> void:
+	if is_dead:
+		return
 	health -= amount
 	velocity = knockback
 	flash_timer = 0.15
 	
-	# Create flash material
+	spawn_text(str(int(amount)), Color(0.9, 1.0, 0.4), 1.0)
+	
 	var flash_mat = StandardMaterial3D.new()
-	flash_mat.albedo_color = Color(1.0, 0.2, 0.2)
+	flash_mat.albedo_color = Color(1.0, 0.25, 0.25)
+	flash_mat.emission_enabled = true
+	flash_mat.emission = Color(1.0, 0.2, 0.2)
 	mesh_instance.material_override = flash_mat
 	
 	if health <= 0.0:
 		die()
 
+func spawn_text(txt: String, col: Color, sz: float) -> void:
+	var ft = floating_text_scene.instantiate()
+	get_parent().add_child(ft)
+	ft.global_position = global_position + Vector3(0, 1.4, 0)
+	ft.setup(txt, col, sz)
+
 func die() -> void:
+	if is_dead:
+		return
+	is_dead = true
 	died.emit()
+	
+	# Hide visuals and trigger splat particles
+	visual_root.visible = false
+	collision_layer = 0
+	collision_mask = 0
+	
+	if death_particles != null:
+		death_particles.emitting = true
+		
 	var main_node = get_tree().current_scene
 	if main_node.has_method("on_enemy_killed"):
 		main_node.on_enemy_killed()
+		
+	# Wait for particles before freeing
+	await get_tree().create_timer(0.6).timeout
 	queue_free()

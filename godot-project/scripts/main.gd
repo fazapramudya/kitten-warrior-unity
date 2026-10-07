@@ -4,11 +4,14 @@ extends Node3D
 @onready var health_bar: ProgressBar = $HUD/MarginContainer/VBoxContainer/HealthBar
 @onready var stamina_bar: ProgressBar = $HUD/MarginContainer/VBoxContainer/StaminaBar
 @onready var kill_label: Label = $HUD/MarginContainer/VBoxContainer/KillLabel
+@onready var status_label: Label = $HUD/MarginContainer/VBoxContainer/StatusLabel
 
 var kills: int = 0
 var slime_scene = preload("res://scenes/slime.tscn")
+var goblin_scene = preload("res://scenes/goblin.tscn")
+
 var spawn_timer: float = 0.0
-var spawn_interval: float = 8.0
+var spawn_interval: float = 6.0
 
 func _ready() -> void:
 	if player:
@@ -22,7 +25,7 @@ func _process(delta: float) -> void:
 	spawn_timer += delta
 	if spawn_timer >= spawn_interval:
 		spawn_timer = 0.0
-		spawn_slime_around_player()
+		spawn_monster_around_player()
 
 func _on_health_changed(curr: float, max_val: float) -> void:
 	if health_bar:
@@ -33,6 +36,16 @@ func _on_stamina_changed(curr: float, max_val: float) -> void:
 	if stamina_bar:
 		stamina_bar.max_value = max_val
 		stamina_bar.value = curr
+		
+	if status_label and player:
+		if player.is_exhausted:
+			status_label.text = "⚡ EXHAUSTED!"
+			status_label.modulate = Color(1.0, 0.35, 0.2)
+		elif curr >= max_val * 0.95:
+			status_label.text = "🛡️ RESTED"
+			status_label.modulate = Color(0.5, 0.9, 0.6)
+		else:
+			status_label.text = ""
 
 func on_enemy_killed() -> void:
 	kills += 1
@@ -42,18 +55,19 @@ func update_kill_ui() -> void:
 	if kill_label:
 		kill_label.text = "⚔️ Kills: " + str(kills)
 
-func spawn_slime_around_player() -> void:
+func spawn_monster_around_player() -> void:
 	if player == null:
 		return
-	# Count existing slimes
 	var existing = get_tree().get_nodes_in_group("enemies")
-	if existing.size() >= 12:
+	if existing.size() >= 14:
 		return
 		
 	var angle := randf() * TAU
-	var dist := randf_range(12.0, 24.0)
+	var dist := randf_range(14.0, 26.0)
 	var spawn_pos = player.global_position + Vector3(cos(angle) * dist, 1.0, sin(angle) * dist)
 	
-	var slime = slime_scene.instantiate()
-	slime.global_position = spawn_pos
-	add_child(slime)
+	# 60% Slime, 40% Goblin
+	var monster_scene = slime_scene if randf() < 0.6 else goblin_scene
+	var monster = monster_scene.instantiate()
+	monster.global_position = spawn_pos
+	add_child(monster)

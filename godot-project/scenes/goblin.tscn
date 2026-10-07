@@ -1,0 +1,107 @@
+[gd_scene load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://scripts/goblin.gd" id="1_goblin"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_goblin"]
+radius = 0.4
+height = 1.4
+
+[sub_resource type="StandardMaterial3D" id="Mat_GoblinSkin"]
+albedo_color = Color(0.32, 0.45, 0.24, 1)
+roughness = 0.85
+
+[sub_resource type="CapsuleMesh" id="Mesh_GoblinBody"]
+material = SubResource("Mat_GoblinSkin")
+radius = 0.32
+height = 0.8
+
+[sub_resource type="SphereMesh" id="Mesh_GoblinHead"]
+material = SubResource("Mat_GoblinSkin")
+radius = 0.28
+height = 0.55
+
+[sub_resource type="PrismMesh" id="Mesh_GoblinEar"]
+material = SubResource("Mat_GoblinSkin")
+size = Vector3(0.14, 0.35, 0.08)
+
+[sub_resource type="StandardMaterial3D" id="Mat_Leather"]
+albedo_color = Color(0.28, 0.18, 0.12, 1)
+roughness = 0.9
+
+[sub_resource type="CylinderMesh" id="Mesh_Loincloth"]
+material = SubResource("Mat_Leather")
+top_radius = 0.34
+bottom_radius = 0.38
+height = 0.3
+
+[sub_resource type="StandardMaterial3D" id="Mat_WoodShaft"]
+albedo_color = Color(0.38, 0.25, 0.15, 1)
+roughness = 0.9
+
+[sub_resource type="CylinderMesh" id="Mesh_SpearShaft"]
+material = SubResource("Mat_WoodShaft")
+top_radius = 0.03
+bottom_radius = 0.03
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="Mat_FlintTip"]
+albedo_color = Color(0.65, 0.65, 0.65, 1)
+roughness = 0.4
+metallic = 0.3
+
+[sub_resource type="PrismMesh" id="Mesh_SpearTip"]
+material = SubResource("Mat_FlintTip")
+size = Vector3(0.14, 0.4, 0.06)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_spear"]
+size = Vector3(0.8, 0.8, 1.4)
+
+[node name="ForestGoblin" type="CharacterBody3D" groups=["enemies"]]
+collision_layer = 2
+collision_mask = 3
+script = ExtResource("1_goblin")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("CapsuleShape3D_goblin")
+
+[node name="VisualRoot" type="Node3D" parent="."]
+
+[node name="Body" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+mesh = SubResource("Mesh_GoblinBody")
+
+[node name="Loincloth" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0)
+mesh = SubResource("Mesh_Loincloth")
+
+[node name="Head" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0.08)
+mesh = SubResource("Mesh_GoblinHead")
+
+[node name="EarL" type="MeshInstance3D" parent="VisualRoot/Head"]
+transform = Transform3D(0.5, -0.866025, 0, 0.866025, 0.5, 0, 0, 0, 1, -0.32, 0.08, 0)
+mesh = SubResource("Mesh_GoblinEar")
+
+[node name="EarR" type="MeshInstance3D" parent="VisualRoot/Head"]
+transform = Transform3D(0.5, 0.866025, 0, -0.866025, 0.5, 0, 0, 0, 1, 0.32, 0.08, 0)
+mesh = SubResource("Mesh_GoblinEar")
+
+[node name="SpearPivot" type="Node3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.5, 0.2)
+
+[node name="Shaft" type="MeshInstance3D" parent="VisualRoot/SpearPivot"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0.4)
+mesh = SubResource("Mesh_SpearShaft")
+
+[node name="Tip" type="MeshInstance3D" parent="VisualRoot/SpearPivot"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 1.4)
+mesh = SubResource("Mesh_SpearTip")
+
+[node name="SpearArea" type="Area3D" parent="VisualRoot/SpearPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.2)
+collision_layer = 4
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="VisualRoot/SpearPivot/SpearArea"]
+shape = SubResource("BoxShape3D_spear")

@@ -1,0 +1,109 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/campfire.gd" id="1_campfire"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_Stone"]
+albedo_color = Color(0.35, 0.35, 0.35, 1)
+roughness = 0.9
+
+[sub_resource type="SphereMesh" id="Mesh_Stone"]
+material = SubResource("Mat_Stone")
+radius = 0.22
+height = 0.35
+
+[sub_resource type="StandardMaterial3D" id="Mat_Log"]
+albedo_color = Color(0.18, 0.12, 0.08, 1)
+roughness = 0.9
+
+[sub_resource type="CylinderMesh" id="Mesh_Log"]
+material = SubResource("Mat_Log")
+top_radius = 0.08
+bottom_radius = 0.09
+height = 1.1
+
+[sub_resource type="StandardMaterial3D" id="Mat_Fire"]
+albedo_color = Color(1, 0.5, 0.1, 1)
+emission_enabled = true
+emission = Color(1, 0.6, 0.1, 1)
+emission_energy_multiplier = 4.0
+
+[sub_resource type="PrismMesh" id="Mesh_Flame"]
+material = SubResource("Mat_Fire")
+size = Vector3(0.4, 0.7, 0.4)
+
+[sub_resource type="ParticleProcessMaterial" id="Mat_Embers"]
+emission_shape = 1
+emission_sphere_radius = 0.3
+direction = Vector3(0, 1, 0)
+spread = 25.0
+initial_velocity_min = 1.2
+initial_velocity_max = 2.4
+gravity = Vector3(0, 0.5, 0)
+scale_min = 0.03
+scale_max = 0.08
+color = Color(1, 0.65, 0.2, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_EmberMesh"]
+albedo_color = Color(1, 0.8, 0.2, 1)
+emission_enabled = true
+emission = Color(1, 0.8, 0.2, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="SphereMesh" id="Mesh_EmberDot"]
+material = SubResource("Mat_EmberMesh")
+radius = 0.05
+height = 0.1
+
+[node name="Campfire" type="Node3D"]
+script = ExtResource("1_campfire")
+
+[node name="Stone1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7, 0.1, 0)
+mesh = SubResource("Mesh_Stone")
+
+[node name="Stone2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.7, 0.1, 0)
+mesh = SubResource("Mesh_Stone")
+
+[node name="Stone3" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0.7)
+mesh = SubResource("Mesh_Stone")
+
+[node name="Stone4" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, -0.7)
+mesh = SubResource("Mesh_Stone")
+
+[node name="Stone5" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.1, 0.5)
+mesh = SubResource("Mesh_Stone")
+
+[node name="Stone6" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0.1, -0.5)
+mesh = SubResource("Mesh_Stone")
+
+[node name="Log1" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, 0, 0.15, 0)
+mesh = SubResource("Mesh_Log")
+
+[node name="Log2" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.707107, 0, -0.707107, 0, 1, 0, 0.707107, 0, 0.707107, 0, 0.15, 0)
+mesh = SubResource("Mesh_Log")
+
+[node name="Flame" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+mesh = SubResource("Mesh_Flame")
+
+[node name="Embers" type="GPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+amount = 16
+lifetime = 1.2
+process_material = SubResource("Mat_Embers")
+draw_pass_1 = SubResource("Mesh_EmberDot")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+light_color = Color(1, 0.65, 0.25, 1)
+light_energy = 2.8
+omni_range = 14.0
+omni_attenuation = 1.2
+shadow_enabled = true

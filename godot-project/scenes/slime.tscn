@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scripts/slime.gd" id="1_slime"]
 
@@ -7,16 +7,30 @@ radius = 0.65
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_slime"]
 transparency = 1
-albedo_color = Color(0.2, 0.85, 0.35, 0.88)
-roughness = 0.15
+albedo_color = Color(0.2, 0.9, 0.4, 0.82)
+roughness = 0.1
+rim_enabled = true
+rim = 0.6
+rim_tint = 0.4
 emission_enabled = true
-emission = Color(0.1, 0.4, 0.15, 1)
-emission_energy_multiplier = 0.3
+emission = Color(0.1, 0.45, 0.18, 1)
+emission_energy_multiplier = 0.35
 
 [sub_resource type="SphereMesh" id="SphereMesh_slime"]
 material = SubResource("StandardMaterial3D_slime")
 radius = 0.65
 height = 1.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_Core"]
+albedo_color = Color(0.05, 0.6, 0.25, 1)
+emission_enabled = true
+emission = Color(0.1, 0.8, 0.3, 1)
+emission_energy_multiplier = 1.2
+
+[sub_resource type="SphereMesh" id="Mesh_Core"]
+material = SubResource("Mat_Core")
+radius = 0.28
+height = 0.45
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye"]
 albedo_color = Color(1, 1, 1, 1)
@@ -35,6 +49,24 @@ material = SubResource("StandardMaterial3D_pupil")
 radius = 0.05
 height = 0.1
 
+[sub_resource type="ParticleProcessMaterial" id="Mat_DeathSplat"]
+direction = Vector3(0, 1, 0)
+spread = 60.0
+initial_velocity_min = 2.5
+initial_velocity_max = 5.0
+gravity = Vector3(0, -9.8, 0)
+scale_min = 0.1
+scale_max = 0.25
+color = Color(0.2, 0.85, 0.35, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_SplatDot"]
+albedo_color = Color(0.25, 0.9, 0.4, 1)
+
+[sub_resource type="SphereMesh" id="Mesh_SplatDot"]
+material = SubResource("Mat_SplatDot")
+radius = 0.15
+height = 0.25
+
 [node name="Slime" type="CharacterBody3D" groups=["enemies"]]
 collision_layer = 2
 collision_mask = 3
@@ -44,22 +76,36 @@ script = ExtResource("1_slime")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 shape = SubResource("SphereShape3D_slime")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+[node name="VisualRoot" type="Node3D" parent="."]
+
+[node name="BodyMesh" type="MeshInstance3D" parent="VisualRoot"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 mesh = SubResource("SphereMesh_slime")
 
-[node name="EyeLeft" type="MeshInstance3D" parent="."]
+[node name="Core" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+mesh = SubResource("Mesh_Core")
+
+[node name="EyeLeft" type="MeshInstance3D" parent="VisualRoot"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.22, 0.65, 0.48)
 mesh = SubResource("SphereMesh_eye")
 
-[node name="PupilLeft" type="MeshInstance3D" parent="EyeLeft"]
+[node name="PupilLeft" type="MeshInstance3D" parent="VisualRoot/EyeLeft"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.06)
 mesh = SubResource("SphereMesh_pupil")
 
-[node name="EyeRight" type="MeshInstance3D" parent="."]
+[node name="EyeRight" type="MeshInstance3D" parent="VisualRoot"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22, 0.65, 0.48)
 mesh = SubResource("SphereMesh_eye")
 
-[node name="PupilRight" type="MeshInstance3D" parent="EyeRight"]
+[node name="PupilRight" type="MeshInstance3D" parent="VisualRoot/EyeRight"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.06)
 mesh = SubResource("SphereMesh_pupil")
+
+[node name="DeathParticles" type="GPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+emitting = false
+one_shot = true
+explosiveness = 0.95
+process_material = SubResource("Mat_DeathSplat")
+draw_pass_1 = SubResource("Mesh_SplatDot")
