@@ -1,5 +1,23 @@
 [
   {
+    "sprint_id": 2,
+    "title": "Deep Tactical Combat & Multi-Weapon Arsenal",
+    "completed_at": "2026-10-07T04:53:00Z",
+    "status": "completed",
+    "commit": "dd7000f",
+    "github_actions_run": 37573330230,
+    "artifact_size": 71833798,
+    "deliverables": [
+      "Weapon Arsenal switching ([1] Sword & Shield, [2] Flint Spear, [3] War Club) with visual bone attachments",
+      "Heavy Charged Attack (hold Left Mouse Button) with 0.38s charge, 28 stamina cost, and 84-112 damage",
+      "Damage type system: Slashing, Piercing, and Blunt vulnerabilities across enemy roster",
+      "Skeleton crush vulnerability (+75% blunt damage, rapid stagger) and Goblin pierce vulnerability (+60% damage)",
+      "Choppable tree wood damage scaling by weapon type (axes/swords 1.5x chop speed)",
+      "Updated Web Prototype at port 8080 with 3-weapon switching and heavy charged strikes",
+      "Automated CI build verified and released as KittenWarrior-Godot4-Windows-x64.zip"
+    ]
+  },
+  {
     "sprint_id": 1,
     "title": "Valheim Survival Loop: Day/Night Cycle, Food Buffs, Interactive Tree Chopping & Stagger Combat",
     "completed_at": "2026-10-07T03:48:00Z",
