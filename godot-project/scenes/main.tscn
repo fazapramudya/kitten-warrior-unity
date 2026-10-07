@@ -1,88 +1,131 @@
-[gd_scene load_steps=29 format=3]
+[gd_scene load_steps=37 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" path="res://scenes/slime.tscn" id="3_slime"]
 [ext_resource type="PackedScene" path="res://scenes/goblin.tscn" id="4_goblin"]
 [ext_resource type="PackedScene" path="res://scenes/skeleton.tscn" id="5_skeleton"]
-[ext_resource type="PackedScene" path="res://scenes/props/pine_tree.tscn" id="6_pinetree"]
-[ext_resource type="PackedScene" path="res://scenes/props/pine_tree_tall.tscn" id="7_pinetree_tall"]
-[ext_resource type="PackedScene" path="res://scenes/props/boulder.tscn" id="8_boulder"]
-[ext_resource type="PackedScene" path="res://scenes/props/boulder_b.tscn" id="9_boulder_b"]
-[ext_resource type="PackedScene" path="res://scenes/props/campfire.tscn" id="10_campfire"]
-[ext_resource type="PackedScene" path="res://scenes/props/plant_bush.tscn" id="11_bush"]
-[ext_resource type="PackedScene" path="res://scenes/props/mushroom.tscn" id="12_mushroom"]
+[ext_resource type="PackedScene" path="res://scenes/props/campsite.tscn" id="6_campsite"]
+[ext_resource type="PackedScene" path="res://scenes/props/rune_stone.tscn" id="7_runestone"]
+[ext_resource type="PackedScene" path="res://scenes/props/fallen_timber.tscn" id="8_timber"]
+[ext_resource type="PackedScene" path="res://scenes/props/cliff_formation.tscn" id="9_cliff"]
+[ext_resource type="PackedScene" path="res://scenes/props/foliage_patch.tscn" id="10_foliage"]
+[ext_resource type="PackedScene" path="res://scenes/props/pine_tree.tscn" id="11_pine"]
+[ext_resource type="PackedScene" path="res://scenes/props/pine_tree_tall.tscn" id="12_pine_tall"]
+[ext_resource type="PackedScene" path="res://scenes/props/pine_spruce.tscn" id="13_spruce"]
+[ext_resource type="PackedScene" path="res://scenes/props/pine_sapling.tscn" id="14_sapling"]
+[ext_resource type="PackedScene" path="res://scenes/props/boulder.tscn" id="15_boulder_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/boulder_b.tscn" id="16_boulder_b"]
+[ext_resource type="PackedScene" path="res://scenes/props/mushroom.tscn" id="17_mushroom"]
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
-sky_top_color = Color(0.22, 0.42, 0.72, 1)
-sky_horizon_color = Color(0.92, 0.65, 0.35, 1)
-ground_bottom_color = Color(0.12, 0.16, 0.1, 1)
-ground_horizon_color = Color(0.52, 0.42, 0.28, 1)
-sun_angle_max = 35.0
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat_Valheim"]
+sky_top_color = Color(0.12, 0.24, 0.48, 1)
+sky_horizon_color = Color(0.98, 0.64, 0.32, 1)
+sky_curve = 0.08
+ground_bottom_color = Color(0.08, 0.12, 0.08, 1)
+ground_horizon_color = Color(0.24, 0.28, 0.22, 1)
+ground_curve = 0.04
+sun_angle_max = 28.0
 
-[sub_resource type="Sky" id="Sky_env"]
-sky_material = SubResource("ProceduralSkyMaterial_sky")
+[sub_resource type="Sky" id="Sky_Valheim"]
+sky_material = SubResource("SkyMat_Valheim")
 
-[sub_resource type="Environment" id="Environment_valheim"]
+[sub_resource type="Environment" id="Env_Valheim"]
 background_mode = 2
-sky = SubResource("Sky_env")
+sky = SubResource("Sky_Valheim")
 ambient_light_source = 3
-ambient_light_color = Color(0.9, 0.82, 0.7, 1)
-ambient_light_energy = 0.65
-tonemap_mode = 2
-tonemap_exposure = 1.05
+ambient_light_color = Color(0.72, 0.78, 0.85, 1)
+ambient_light_energy = 0.6
+tonemap_mode = 3
+tonemap_exposure = 1.12
 ssr_enabled = true
 ssao_enabled = true
-ssao_radius = 1.6
-ssao_intensity = 2.4
+ssao_radius = 2.4
+ssao_intensity = 3.2
+ssao_power = 1.5
 glow_enabled = true
-glow_intensity = 0.45
+glow_intensity = 0.5
+glow_bloom = 0.35
 volumetric_fog_enabled = true
-volumetric_fog_density = 0.022
-volumetric_fog_albedo = Color(0.98, 0.88, 0.72, 1)
-volumetric_fog_emission = Color(0.22, 0.16, 0.08, 1)
-volumetric_fog_anisotropy = 0.52
+volumetric_fog_density = 0.026
+volumetric_fog_albedo = Color(0.98, 0.86, 0.70, 1)
+volumetric_fog_emission = Color(0.18, 0.14, 0.08, 1)
+volumetric_fog_anisotropy = 0.65
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_ground"]
-size = Vector3(180, 2, 180)
+[sub_resource type="BoxShape3D" id="Shape_Ground"]
+size = Vector3(220, 2, 220)
 
-[sub_resource type="StandardMaterial3D" id="Mat_Grass"]
-albedo_color = Color(0.18, 0.32, 0.16, 1)
-roughness = 0.95
+[sub_resource type="StandardMaterial3D" id="Mat_ForestGround"]
+albedo_color = Color(0.16, 0.28, 0.14, 1)
+roughness = 0.92
 rim_enabled = true
-rim = 0.25
-rim_tint = 0.3
+rim = 0.35
+rim_tint = 0.4
 
-[sub_resource type="BoxMesh" id="BoxMesh_ground"]
-material = SubResource("Mat_Grass")
-size = Vector3(180, 2, 180)
+[sub_resource type="BoxMesh" id="Mesh_Ground"]
+material = SubResource("Mat_ForestGround")
+size = Vector3(220, 2, 220)
 
-[sub_resource type="ParticleProcessMaterial" id="Mat_Spores"]
+[sub_resource type="StandardMaterial3D" id="Mat_CampClearing"]
+albedo_color = Color(0.28, 0.22, 0.16, 1)
+roughness = 0.95
+
+[sub_resource type="CylinderMesh" id="Mesh_CampClearing"]
+material = SubResource("Mat_CampClearing")
+top_radius = 9.5
+bottom_radius = 10.5
+height = 0.08
+
+[sub_resource type="ParticleProcessMaterial" id="Mat_PollenMotes"]
 emission_shape = 3
-emission_box_extents = Vector3(32, 8, 32)
-direction = Vector3(0.5, 0.2, 0.5)
-spread = 45.0
-initial_velocity_min = 0.2
-initial_velocity_max = 0.8
-gravity = Vector3(0, 0.05, 0)
+emission_box_extents = Vector3(36, 10, 36)
+direction = Vector3(0.6, 0.15, 0.4)
+spread = 35.0
+initial_velocity_min = 0.3
+initial_velocity_max = 0.9
+gravity = Vector3(0, 0.03, 0)
 scale_min = 0.03
 scale_max = 0.08
-color = Color(1, 0.92, 0.6, 0.75)
+color = Color(1, 0.92, 0.62, 0.85)
 
-[sub_resource type="StandardMaterial3D" id="Mat_SporeMesh"]
+[sub_resource type="StandardMaterial3D" id="Mat_PollenDot"]
 transparency = 1
-albedo_color = Color(1, 0.9, 0.5, 0.8)
+albedo_color = Color(1, 0.9, 0.55, 0.85)
 emission_enabled = true
-emission = Color(1, 0.9, 0.5, 1)
-emission_energy_multiplier = 2.0
+emission = Color(1, 0.9, 0.55, 1)
+emission_energy_multiplier = 2.5
 
-[sub_resource type="SphereMesh" id="Mesh_SporeDot"]
-material = SubResource("Mat_SporeMesh")
-radius = 0.06
-height = 0.12
+[sub_resource type="SphereMesh" id="Mesh_PollenDot"]
+material = SubResource("Mat_PollenDot")
+radius = 0.05
+height = 0.1
+
+[sub_resource type="ParticleProcessMaterial" id="Mat_Fireflies"]
+emission_shape = 3
+emission_box_extents = Vector3(32, 4, 32)
+direction = Vector3(0, 1, 0)
+spread = 90.0
+initial_velocity_min = 0.1
+initial_velocity_max = 0.4
+gravity = Vector3(0, 0, 0)
+scale_min = 0.04
+scale_max = 0.09
+color = Color(0.4, 1.0, 0.7, 0.8)
+
+[sub_resource type="StandardMaterial3D" id="Mat_FireflyDot"]
+transparency = 1
+albedo_color = Color(0.4, 1.0, 0.7, 0.9)
+emission_enabled = true
+emission = Color(0.4, 1.0, 0.7, 1)
+emission_energy_multiplier = 4.0
+
+[sub_resource type="SphereMesh" id="Mesh_FireflyDot"]
+material = SubResource("Mat_FireflyDot")
+radius = 0.045
+height = 0.09
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_HUD_panel"]
-bg_color = Color(0.08, 0.07, 0.06, 0.85)
+bg_color = Color(0.08, 0.07, 0.06, 0.88)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
@@ -128,14 +171,15 @@ corner_radius_bottom_left = 4
 script = ExtResource("1_main")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_valheim")
+environment = SubResource("Env_Valheim")
 
 [node name="SunLight" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 24, 0)
-light_color = Color(1, 0.9, 0.75, 1)
-light_energy = 1.45
+transform = Transform3D(0.819152, -0.40558, 0.40558, 0, 0.707107, 0.707107, -0.573576, -0.579228, 0.579228, 0, 24, 0)
+light_color = Color(1, 0.88, 0.72, 1)
+light_energy = 1.85
 shadow_enabled = true
-shadow_bias = 0.04
+shadow_bias = 0.03
+shadow_normal_bias = 1.8
 directional_shadow_split_1 = 0.1
 directional_shadow_split_2 = 0.25
 directional_shadow_split_3 = 0.55
@@ -146,95 +190,223 @@ collision_layer = 1
 collision_mask = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
-shape = SubResource("BoxShape3D_ground")
+shape = SubResource("Shape_Ground")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
-mesh = SubResource("BoxMesh_ground")
+mesh = SubResource("Mesh_Ground")
 
-[node name="SporesParticles" type="GPUParticles3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
-amount = 64
-lifetime = 6.0
-process_material = SubResource("Mat_Spores")
-draw_pass_1 = SubResource("Mesh_SporeDot")
+[node name="CampClearingDirt" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04, -1.2)
+mesh = SubResource("Mesh_CampClearing")
 
-[node name="Campfire" parent="." instance=ExtResource("10_campfire")]
+[node name="PollenParticles" type="GPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 0)
+amount = 96
+lifetime = 6.5
+process_material = SubResource("Mat_PollenMotes")
+draw_pass_1 = SubResource("Mesh_PollenDot")
+
+[node name="FireflyParticles" type="GPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+amount = 45
+lifetime = 5.0
+process_material = SubResource("Mat_Fireflies")
+draw_pass_1 = SubResource("Mesh_FireflyDot")
+
+[node name="Campsite" parent="." instance=ExtResource("6_campsite")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 
-[node name="ForestPines" type="Node3D" parent="."]
+[node name="RuneStones" type="Node3D" parent="."]
 
-[node name="Pine1" parent="ForestPines" instance=ExtResource("6_pinetree")]
-transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 8, 0, -10)
+[node name="RuneStoneEast" parent="RuneStones" instance=ExtResource("7_runestone")]
+transform = Transform3D(0.939693, 0, -0.34202, 0, 1, 0, 0.34202, 0, 0.939693, 14, 0, 12)
 
-[node name="Pine2" parent="ForestPines" instance=ExtResource("7_pinetree_tall")]
-transform = Transform3D(0.9, 0, 0.4, 0, 1.1, 0, -0.4, 0, 0.9, -12, 0, -8)
+[node name="RuneStoneWest" parent="RuneStones" instance=ExtResource("7_runestone")]
+transform = Transform3D(0.766044, 0, 0.642788, 0, 1, 0, -0.642788, 0, 0.766044, -18, 0, -8)
 
-[node name="Pine3" parent="ForestPines" instance=ExtResource("6_pinetree")]
-transform = Transform3D(1.3, 0, -0.2, 0, 1.3, 0, 0.2, 0, 1.3, 14, 0, 12)
+[node name="Cliffs" type="Node3D" parent="."]
 
-[node name="Pine4" parent="ForestPines" instance=ExtResource("7_pinetree_tall")]
-transform = Transform3D(1.1, 0, 0, 0, 1.0, 0, 0, 0, 1.1, -16, 0, 14)
+[node name="CliffNorth1" parent="Cliffs" instance=ExtResource("9_cliff")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, -6, 0, -28)
 
-[node name="Pine5" parent="ForestPines" instance=ExtResource("6_pinetree")]
-transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 2, 0, 18)
+[node name="CliffNorth2" parent="Cliffs" instance=ExtResource("9_cliff")]
+transform = Transform3D(0.9, 0, 0.8, 0, 1.1, 0, -0.8, 0, 0.9, 14, 0, -26)
 
-[node name="Pine6" parent="ForestPines" instance=ExtResource("7_pinetree_tall")]
-transform = Transform3D(1.0, 0, 0.3, 0, 1.1, 0, -0.3, 0, 1.0, -8, 0, -22)
+[node name="CliffWest" parent="Cliffs" instance=ExtResource("9_cliff")]
+transform = Transform3D(0, 0, 1.3, 0, 1.2, 0, -1.3, 0, 0, -30, 0, -4)
 
-[node name="Pine7" parent="ForestPines" instance=ExtResource("6_pinetree")]
-transform = Transform3D(1.2, 0, 0, 0, 1.3, 0, 0, 0, 1.2, 22, 0, -14)
+[node name="CliffEast" parent="Cliffs" instance=ExtResource("9_cliff")]
+transform = Transform3D(0, 0, -1.2, 0, 1.1, 0, 1.2, 0, 0, 32, 0, 8)
 
-[node name="Pine8" parent="ForestPines" instance=ExtResource("7_pinetree_tall")]
-transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, -20, 0, -12)
+[node name="TimberAndStumps" type="Node3D" parent="."]
 
-[node name="Pine9" parent="ForestPines" instance=ExtResource("6_pinetree")]
-transform = Transform3D(1.1, 0, 0, 0, 1.2, 0, 0, 0, 1.1, 25, 0, 16)
+[node name="Timber1" parent="TimberAndStumps" instance=ExtResource("8_timber")]
+transform = Transform3D(0.965926, 0, 0.258819, 0, 1, 0, -0.258819, 0, 0.965926, 8, 0, -8)
+
+[node name="Timber2" parent="TimberAndStumps" instance=ExtResource("8_timber")]
+transform = Transform3D(0.707107, 0, -0.707107, 0, 1, 0, 0.707107, 0, 0.707107, -12, 0, 6)
+
+[node name="Timber3" parent="TimberAndStumps" instance=ExtResource("8_timber")]
+transform = Transform3D(0.258819, 0, 0.965926, 0, 1, 0, -0.965926, 0, 0.258819, 16, 0, -16)
+
+[node name="Timber4" parent="TimberAndStumps" instance=ExtResource("8_timber")]
+transform = Transform3D(-0.5, 0, 0.866025, 0, 1, 0, -0.866025, 0, -0.5, -8, 0, -18)
+
+[node name="ForestCanopy" type="Node3D" parent="."]
+
+[node name="PineTall1" parent="ForestCanopy" instance=ExtResource("12_pine_tall")]
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, 10, 0, -14)
+
+[node name="PineTall2" parent="ForestCanopy" instance=ExtResource("12_pine_tall")]
+transform = Transform3D(1.1, 0, 0.4, 0, 1.2, 0, -0.4, 0, 1.1, -14, 0, -12)
+
+[node name="PineTall3" parent="ForestCanopy" instance=ExtResource("12_pine_tall")]
+transform = Transform3D(1.4, 0, -0.2, 0, 1.4, 0, 0.2, 0, 1.4, 18, 0, 16)
+
+[node name="PineTall4" parent="ForestCanopy" instance=ExtResource("12_pine_tall")]
+transform = Transform3D(1.2, 0, 0, 0, 1.1, 0, 0, 0, 1.2, -22, 0, 16)
+
+[node name="PineTall5" parent="ForestCanopy" instance=ExtResource("12_pine_tall")]
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 4, 0, 22)
+
+[node name="PineTall6" parent="ForestCanopy" instance=ExtResource("12_pine_tall")]
+transform = Transform3D(1.1, 0, 0.3, 0, 1.2, 0, -0.3, 0, 1.1, -10, 0, -26)
+
+[node name="PineTall7" parent="ForestCanopy" instance=ExtResource("12_pine_tall")]
+transform = Transform3D(1.3, 0, 0, 0, 1.4, 0, 0, 0, 1.3, 26, 0, -18)
+
+[node name="PineTall8" parent="ForestCanopy" instance=ExtResource("12_pine_tall")]
+transform = Transform3D(1.2, 0, 0, 0, 1.3, 0, 0, 0, 1.2, -24, 0, -16)
+
+[node name="PineTall9" parent="ForestCanopy" instance=ExtResource("12_pine_tall")]
+transform = Transform3D(1.4, 0, 0, 0, 1.3, 0, 0, 0, 1.4, 28, 0, 18)
+
+[node name="Spruce1" parent="ForestCanopy" instance=ExtResource("13_spruce")]
+transform = Transform3D(1.3, 0, 0.3, 0, 1.3, 0, -0.3, 0, 1.3, 13, 0, -8)
+
+[node name="Spruce2" parent="ForestCanopy" instance=ExtResource("13_spruce")]
+transform = Transform3D(1.1, 0, -0.4, 0, 1.2, 0, 0.4, 0, 1.1, -16, 0, -4)
+
+[node name="Spruce3" parent="ForestCanopy" instance=ExtResource("13_spruce")]
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, -6, 0, 16)
+
+[node name="Spruce4" parent="ForestCanopy" instance=ExtResource("13_spruce")]
+transform = Transform3D(1.2, 0, 0.5, 0, 1.2, 0, -0.5, 0, 1.2, 22, 0, 2)
+
+[node name="Spruce5" parent="ForestCanopy" instance=ExtResource("13_spruce")]
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, -26, 0, 4)
+
+[node name="Spruce6" parent="ForestCanopy" instance=ExtResource("13_spruce")]
+transform = Transform3D(1.4, 0, -0.3, 0, 1.5, 0, 0.3, 0, 1.4, 16, 0, -28)
+
+[node name="PineMed1" parent="ForestCanopy" instance=ExtResource("11_pine")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 7, 0, 8)
+
+[node name="PineMed2" parent="ForestCanopy" instance=ExtResource("11_pine")]
+transform = Transform3D(0.9, 0, 0.3, 0, 1.0, 0, -0.3, 0, 0.9, -10, 0, 11)
+
+[node name="PineMed3" parent="ForestCanopy" instance=ExtResource("11_pine")]
+transform = Transform3D(1.2, 0, -0.2, 0, 1.2, 0, 0.2, 0, 1.2, 19, 0, -6)
+
+[node name="PineMed4" parent="ForestCanopy" instance=ExtResource("11_pine")]
+transform = Transform3D(1.0, 0, 0, 0, 1.1, 0, 0, 0, 1.0, -18, 0, 22)
+
+[node name="PineMed5" parent="ForestCanopy" instance=ExtResource("11_pine")]
+transform = Transform3D(1.3, 0, 0, 0, 1.2, 0, 0, 0, 1.3, 2, 0, -18)
+
+[node name="Sapling1" parent="ForestCanopy" instance=ExtResource("14_sapling")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 5, 0, 6)
+
+[node name="Sapling2" parent="ForestCanopy" instance=ExtResource("14_sapling")]
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, -7, 0, 4)
+
+[node name="Sapling3" parent="ForestCanopy" instance=ExtResource("14_sapling")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 8, 0, -4)
+
+[node name="Sapling4" parent="ForestCanopy" instance=ExtResource("14_sapling")]
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, -4, 0, -8)
+
+[node name="Sapling5" parent="ForestCanopy" instance=ExtResource("14_sapling")]
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 12, 0, 18)
 
 [node name="Boulders" type="Node3D" parent="."]
 
-[node name="Boulder1" parent="Boulders" instance=ExtResource("8_boulder")]
-transform = Transform3D(1.1, 0, 0, 0, 1, 0, 0, 0, 1.2, 6, 0, 4)
+[node name="BoulderA1" parent="Boulders" instance=ExtResource("15_boulder_a")]
+transform = Transform3D(1.2, 0, 0, 0, 1.1, 0, 0, 0, 1.2, 7, 0, 3)
 
-[node name="Boulder2" parent="Boulders" instance=ExtResource("9_boulder_b")]
-transform = Transform3D(1.5, 0, 0.3, 0, 1.2, 0, -0.3, 0, 1.4, -9, 0, -4)
+[node name="BoulderB1" parent="Boulders" instance=ExtResource("16_boulder_b")]
+transform = Transform3D(1.4, 0, 0.3, 0, 1.2, 0, -0.3, 0, 1.3, -9, 0, -3)
 
-[node name="Boulder3" parent="Boulders" instance=ExtResource("8_boulder")]
-transform = Transform3D(0.9, 0, 0, 0, 0.8, 0, 0, 0, 0.9, 3, 0, -7)
+[node name="BoulderA2" parent="Boulders" instance=ExtResource("15_boulder_a")]
+transform = Transform3D(1.0, 0, 0, 0, 0.9, 0, 0, 0, 1.0, 4, 0, -7)
 
-[node name="Boulder4" parent="Boulders" instance=ExtResource("9_boulder_b")]
-transform = Transform3D(1.3, 0, 0, 0, 1.1, 0, 0, 0, 1.3, -14, 0, 6)
+[node name="BoulderB2" parent="Boulders" instance=ExtResource("16_boulder_b")]
+transform = Transform3D(1.3, 0, 0, 0, 1.1, 0, 0, 0, 1.3, -15, 0, 8)
 
-[node name="Flora" type="Node3D" parent="."]
+[node name="BoulderA3" parent="Boulders" instance=ExtResource("15_boulder_a")]
+transform = Transform3D(1.5, 0, 0, 0, 1.4, 0, 0, 0, 1.5, 21, 0, 8)
 
-[node name="Bush1" parent="Flora" instance=ExtResource("11_bush")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 3)
+[node name="BoulderB3" parent="Boulders" instance=ExtResource("16_boulder_b")]
+transform = Transform3D(1.6, 0, -0.4, 0, 1.3, 0, 0.4, 0, 1.5, -20, 0, -18)
 
-[node name="Bush2" parent="Flora" instance=ExtResource("11_bush")]
-transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, -5, 0, -3)
+[node name="FoliageUndergrowth" type="Node3D" parent="."]
 
-[node name="Bush3" parent="Flora" instance=ExtResource("11_bush")]
-transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 7, 0, -5)
+[node name="Patch1" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 3, 0, 4)
 
-[node name="Shroom1" parent="Flora" instance=ExtResource("12_mushroom")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 2)
+[node name="Patch2" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
+transform = Transform3D(1.1, 0, 0.3, 0, 1.1, 0, -0.3, 0, 1.1, -4, 0, 3)
 
-[node name="Shroom2" parent="Flora" instance=ExtResource("12_mushroom")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8, 0, 1.5)
+[node name="Patch3" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
+transform = Transform3D(1.3, 0, -0.2, 0, 1.3, 0, 0.2, 0, 1.3, 5, 0, -5)
 
-[node name="Shroom3" parent="Flora" instance=ExtResource("12_mushroom")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 0, -6)
+[node name="Patch4" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
+transform = Transform3D(1.0, 0, 0.4, 0, 1.0, 0, -0.4, 0, 1.0, -5, 0, -6)
+
+[node name="Patch5" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 9, 0, 7)
+
+[node name="Patch6" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
+transform = Transform3D(1.2, 0, -0.3, 0, 1.2, 0, 0.3, 0, 1.2, -11, 0, 5)
+
+[node name="Patch7" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 12, 0, -10)
+
+[node name="Patch8" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
+transform = Transform3D(1.3, 0, 0.2, 0, 1.3, 0, -0.2, 0, 1.3, -13, 0, -9)
+
+[node name="Patch9" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 16, 0, 5)
+
+[node name="Patch10" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
+transform = Transform3D(1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0, -8, 0, 14)
+
+[node name="Patch11" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, 1, 0, 12)
+
+[node name="Patch12" parent="FoliageUndergrowth" instance=ExtResource("10_foliage")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 0, 0, -12)
+
+[node name="Mushroom1" parent="FoliageUndergrowth" instance=ExtResource("17_mushroom")]
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, 2.2, 0, 1.8)
+
+[node name="Mushroom2" parent="FoliageUndergrowth" instance=ExtResource("17_mushroom")]
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, -2.6, 0, 1.2)
+
+[node name="Mushroom3" parent="FoliageUndergrowth" instance=ExtResource("17_mushroom")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, -3.0, 0, -5.5)
 
 [node name="Player" parent="." instance=ExtResource("2_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 3.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 3.2)
 
 [node name="SkeletonWarrior" parent="." instance=ExtResource("5_skeleton")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0.5, -9)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.5, -9)
 
 [node name="Goblin1" parent="." instance=ExtResource("4_goblin")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0.5, -12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0.5, -12)
 
 [node name="Slime1" parent="." instance=ExtResource("3_slime")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.5, 7)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0.5, 8)
 
 [node name="HUD" type="CanvasLayer" parent="."]
 

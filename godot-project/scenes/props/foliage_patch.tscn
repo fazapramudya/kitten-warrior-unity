@@ -1,0 +1,30 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/props/k_grass_large.glb" id="1_grass_large"]
+[ext_resource type="PackedScene" path="res://assets/models/props/k_grass.glb" id="2_grass"]
+[ext_resource type="PackedScene" path="res://assets/models/props/k_flower_yellow.glb" id="3_flower_y"]
+[ext_resource type="PackedScene" path="res://assets/models/props/k_flower_purple.glb" id="4_flower_p"]
+[ext_resource type="PackedScene" path="res://assets/models/props/plant_bush.glb" id="5_bush"]
+
+[node name="FoliagePatch" type="Node3D"]
+
+[node name="GrassLarge1" parent="." instance=ExtResource("1_grass_large")]
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 0, 0, 0)
+
+[node name="GrassLarge2" parent="." instance=ExtResource("1_grass_large")]
+transform = Transform3D(0.9, 0, 0.7, 0, 1.2, 0, -0.7, 0, 0.9, 0.8, 0, -0.5)
+
+[node name="Grass1" parent="." instance=ExtResource("2_grass")]
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, -0.7, 0, 0.6)
+
+[node name="Grass2" parent="." instance=ExtResource("2_grass")]
+transform = Transform3D(0.7, 0, -0.8, 0, 1.1, 0, 0.8, 0, 0.7, 0.4, 0, 0.9)
+
+[node name="FlowerYellow" parent="." instance=ExtResource("3_flower_y")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -0.4, 0, -0.6)
+
+[node name="FlowerPurple" parent="." instance=ExtResource("4_flower_p")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0.9, 0, 0.4)
+
+[node name="Bush" parent="." instance=ExtResource("5_bush")]
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, -0.9, 0, -0.2)

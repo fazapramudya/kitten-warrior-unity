@@ -1,0 +1,56 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/props/rune_stone_a.glb" id="1_stone_mesh"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_stone"]
+size = Vector3(1.2, 3.2, 0.8)
+
+[sub_resource type="ParticleProcessMaterial" id="Mat_RuneMotes"]
+emission_shape = 1
+emission_sphere_radius = 1.2
+direction = Vector3(0, 1, 0)
+spread = 35.0
+initial_velocity_min = 0.2
+initial_velocity_max = 0.6
+gravity = Vector3(0, 0.05, 0)
+scale_min = 0.04
+scale_max = 0.09
+color = Color(0.35, 0.85, 1, 0.85)
+
+[sub_resource type="StandardMaterial3D" id="Mat_MoteMesh"]
+transparency = 1
+albedo_color = Color(0.4, 0.9, 1, 0.9)
+emission_enabled = true
+emission = Color(0.3, 0.85, 1, 1)
+emission_energy_multiplier = 3.5
+
+[sub_resource type="SphereMesh" id="Mesh_MoteSphere"]
+material = SubResource("Mat_MoteMesh")
+radius = 0.04
+height = 0.08
+
+[node name="RuneStone" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+shape = SubResource("BoxShape3D_stone")
+
+[node name="Model" parent="." instance=ExtResource("1_stone_mesh")]
+transform = Transform3D(2.2, 0, 0, 0, 2.2, 0, 0, 0, 2.2, 0, 0, 0)
+
+[node name="RuneLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0.4)
+light_color = Color(0.4, 0.85, 1, 1)
+light_energy = 2.4
+omni_range = 7.5
+omni_attenuation = 1.3
+shadow_enabled = false
+
+[node name="RunicMotes" type="GPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+amount = 18
+lifetime = 3.5
+process_material = SubResource("Mat_RuneMotes")
+draw_pass_1 = SubResource("Mesh_MoteSphere")

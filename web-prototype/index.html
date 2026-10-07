@@ -312,13 +312,13 @@
   <div id="click-overlay">
     <div class="start-box">
       <div class="game-title">⚔️ Kitten Warrior 🐾</div>
-      <div class="game-subtitle">3D Valheim-Style Action RPG — Playable Prototype</div>
+      <div class="game-subtitle">3D Valheim-Style Action RPG — Valheim Environment Overhaul</div>
       <p style="font-size: 14px; color: #eeddc5; line-height: 1.6; margin-bottom: 24px;">
-        Kendalikan ksatria kucing di hutan pinus berkabut emas ala <strong>Valheim</strong>! Model 3D kini telah di-upgrade penuh menggunakan <strong>Rigged 3D GLTF Meshes</strong>: Karakter Ksatria Kucing berrig, Skeleton Minion, Goblin, Slime, Pohon Pinus Nordik, Bebatuan Tebing, serta Api Unggun batu berbara!
+        Kendalikan ksatria kucing di atmosfer rimba Nordik <strong>Valheim</strong>! Lingkungan kini dirombak total: <strong>Perkemahan Viking (Campsite)</strong> dengan pondok kayu & api unggun batu berbara, <strong>Batu Rune Kuno (Runestones)</strong> bercahaya mistis biru, <strong>Tebing Batu Granit</strong>, <strong>Batang Pohon Tumbang & Tunggul Lapuk Berlumut</strong>, <strong>Jamur Hutan Merah</strong>, <strong>Rumpun Rumput & Bunga Liar Padang Rumput</strong>, serta <strong>Kabut Volumetrik Emas</strong> berbutir spora dan kunang-kunang!
       </p>
       <div style="display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap;">
         <button class="start-btn">Mulai Bermain di Browser</button>
-        <a href="KittenWarrior-Godot4-Windows-x64.zip" download class="start-btn" style="text-decoration: none; background: linear-gradient(180deg, #276749, #1c4532); border-color: #68d391; font-size: 14px; padding: 14px 24px;">🎮 Download Godot 4 Valheim 3D Meshes .EXE (68 MB) [NEW RELEASE]</a>
+        <a href="KittenWarrior-Godot4-Windows-x64.zip" download class="start-btn" style="text-decoration: none; background: linear-gradient(180deg, #276749, #1c4532); border-color: #68d391; font-size: 14px; padding: 14px 24px;">🎮 Download Godot 4 Valheim Full Environment .EXE [STANDALONE x64]</a>
         <a href="KittenWarrior-Windows-x64.zip" download class="start-btn" style="text-decoration: none; background: linear-gradient(180deg, #2b6cb0, #1a365d); border-color: #63b3ed; font-size: 14px; padding: 14px 24px;">⬇️ Web Desktop .EXE (109 MB)</a>
       </div>
     </div>
@@ -541,6 +541,263 @@
       pillar.rotation.y = Math.random() * Math.PI;
       pillar.castShadow = true;
       scene.add(pillar);
+    }
+
+    /* =========================================================================
+       VALHEIM NORDIC ENVIRONMENT PROPS (Campsite, Runestones, Timber, Flora)
+       ========================================================================= */
+    // 1. Viking Campsite
+    const campGroup = new THREE.Group();
+    campGroup.position.set(0, 0, 0);
+
+    // Trampled Earth Clearing
+    const clearingMesh = new THREE.Mesh(
+      new THREE.CircleGeometry(9.5, 24),
+      new THREE.MeshStandardMaterial({ color: 0x3d3024, roughness: 0.95 })
+    );
+    clearingMesh.rotation.x = -Math.PI / 2;
+    clearingMesh.position.y = 0.02;
+    clearingMesh.receiveShadow = true;
+    campGroup.add(clearingMesh);
+
+    // Campfire Stone Ring & Burning Logs
+    const campFireGroup = new THREE.Group();
+    const stoneRingMat = new THREE.MeshStandardMaterial({ color: 0x4a4742, roughness: 0.9, flatShading: true });
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2;
+      const s = new THREE.Mesh(new THREE.DodecahedronGeometry(0.28, 0), stoneRingMat);
+      s.position.set(Math.cos(a) * 0.95, 0.15, Math.sin(a) * 0.95);
+      s.rotation.set(Math.random(), Math.random(), Math.random());
+      s.castShadow = true;
+      campFireGroup.add(s);
+    }
+    const logMat = new THREE.MeshStandardMaterial({ color: 0x2e1d12, roughness: 0.9 });
+    for (let i = 0; i < 4; i++) {
+      const l = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 1.4, 6), logMat);
+      l.position.y = 0.2;
+      l.rotation.x = Math.PI / 2;
+      l.rotation.z = (i / 4) * Math.PI + 0.3;
+      l.rotation.y = 0.2 * (i % 2 === 0 ? 1 : -1);
+      l.castShadow = true;
+      campFireGroup.add(l);
+    }
+    // Glowing Coals Mesh
+    const coalMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.4, 8, 6),
+      new THREE.MeshStandardMaterial({ color: 0xff3b00, emissive: 0xff4500, emissiveIntensity: 2.5 })
+    );
+    coalMesh.position.y = 0.15;
+    coalMesh.scale.set(1.2, 0.4, 1.2);
+    campFireGroup.add(coalMesh);
+
+    // Campfire Point Light
+    const fireLight = new THREE.PointLight(0xff7722, 2.8, 16);
+    fireLight.position.set(0, 0.8, 0);
+    fireLight.castShadow = true;
+    campFireGroup.add(fireLight);
+    campGroup.add(campFireGroup);
+
+    // Viking Lean-to Shelter
+    const shelterGroup = new THREE.Group();
+    shelterGroup.position.set(0, 0, -3.2);
+    const woodBeamMat = new THREE.MeshStandardMaterial({ color: 0x4a3525, roughness: 0.85 });
+    const thatchMat = new THREE.MeshStandardMaterial({ color: 0x6e5d3b, roughness: 0.95, flatShading: true });
+    // Beams
+    const b1 = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 3.2, 6), woodBeamMat);
+    b1.position.set(-1.8, 1.2, 0);
+    b1.rotation.z = -0.3;
+    shelterGroup.add(b1);
+    const b2 = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 3.2, 6), woodBeamMat);
+    b2.position.set(1.8, 1.2, 0);
+    b2.rotation.z = 0.3;
+    shelterGroup.add(b2);
+    // Roof Thatch Planks
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.15, 2.8), thatchMat);
+    roof.position.set(0, 1.4, -0.6);
+    roof.rotation.x = 0.55;
+    roof.castShadow = true;
+    shelterGroup.add(roof);
+    campGroup.add(shelterGroup);
+
+    // Supply Barrels & Chests
+    const barrelMat = new THREE.MeshStandardMaterial({ color: 0x5a4128, roughness: 0.8 });
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 1.1, 10), barrelMat);
+    barrel.position.set(-2.8, 0.55, -1.2);
+    barrel.castShadow = true;
+    campGroup.add(barrel);
+
+    const chest = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.8), barrelMat);
+    chest.position.set(-2.4, 0.35, -2.4);
+    chest.rotation.y = 0.3;
+    chest.castShadow = true;
+    campGroup.add(chest);
+
+    // Split-rail Wooden Fences
+    const fenceMat = new THREE.MeshStandardMaterial({ color: 0x423120, roughness: 0.9 });
+    for (let i = 0; i < 4; i++) {
+      const fPost = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 1.4, 6), fenceMat);
+      fPost.position.set(-4.2, 0.7, -4 + i * 2.2);
+      fPost.castShadow = true;
+      campGroup.add(fPost);
+      if (i < 3) {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 2.2), fenceMat);
+        rail.position.set(-4.2, 0.8, -2.9 + i * 2.2);
+        rail.castShadow = true;
+        campGroup.add(rail);
+      }
+    }
+    scene.add(campGroup);
+
+    // 2. Mystic Nordic Runestones
+    const runeGroup = new THREE.Group();
+    const runeStoneMat = new THREE.MeshStandardMaterial({ color: 0x363a40, roughness: 0.85, flatShading: true });
+    const runeGlowMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 3.0,
+      roughness: 0.2
+    });
+
+    const createRunestone = (x, z, rotY) => {
+      const stoneObj = new THREE.Group();
+      stoneObj.position.set(x, 0, z);
+      stoneObj.rotation.y = rotY;
+
+      // Slab monolith
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(1.4, 3.8, 0.65), runeStoneMat);
+      slab.position.y = 1.9;
+      slab.castShadow = true;
+      stoneObj.add(slab);
+
+      // Carved Runic Markings (Glowing Inscription)
+      const runeMark = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.4, 0.05), runeGlowMat);
+      runeMark.position.set(0, 2.2, 0.34);
+      stoneObj.add(runeMark);
+
+      // Cyan Ethereal Rune Light
+      const runeLight = new THREE.PointLight(0x38bdf8, 2.2, 9);
+      runeLight.position.set(0, 2.2, 0.8);
+      stoneObj.add(runeLight);
+
+      return stoneObj;
+    };
+
+    const rune1 = createRunestone(14, 12, -0.4);
+    const rune2 = createRunestone(-18, -8, 0.6);
+    runeGroup.add(rune1);
+    runeGroup.add(rune2);
+    scene.add(runeGroup);
+
+    // 3. Fallen Mossy Timber & Cut Stumps with Mushrooms
+    const timberGroup = new THREE.Group();
+    const fallenLogGeo = new THREE.CylinderGeometry(0.35, 0.42, 4.8, 8);
+    const fallenLogMat = new THREE.MeshStandardMaterial({ color: 0x33261a, roughness: 0.95 });
+    const mossMat = new THREE.MeshStandardMaterial({ color: 0x3b582b, roughness: 0.9 });
+    const mushroomCapMat = new THREE.MeshStandardMaterial({ color: 0xd92626, roughness: 0.5 });
+    const mushroomStemMat = new THREE.MeshStandardMaterial({ color: 0xf5f0eb, roughness: 0.8 });
+
+    const createFallenLog = (x, z, rotY) => {
+      const g = new THREE.Group();
+      g.position.set(x, 0.3, z);
+      g.rotation.y = rotY;
+
+      const log = new THREE.Mesh(fallenLogGeo, fallenLogMat);
+      log.rotation.z = Math.PI / 2;
+      log.castShadow = true;
+      g.add(log);
+
+      // Moss patch on top
+      const moss = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.1, 0.5), mossMat);
+      moss.position.y = 0.35;
+      g.add(moss);
+
+      // Stump nearby
+      const stump = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.52, 0.9, 8), fallenLogMat);
+      stump.position.set(2.6, 0.15, 0.8);
+      stump.castShadow = true;
+      g.add(stump);
+
+      // Mushrooms on stump
+      for (let m = 0; m < 3; m++) {
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.25, 5), mushroomStemMat);
+        stem.position.set(2.4 + m * 0.18, 0.65, 0.7 + (m % 2) * 0.15);
+        g.add(stem);
+        const cap = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 5), mushroomCapMat);
+        cap.position.set(2.4 + m * 0.18, 0.8, 0.7 + (m % 2) * 0.15);
+        cap.scale.set(1.1, 0.5, 1.1);
+        g.add(cap);
+      }
+
+      return g;
+    };
+
+    timberGroup.add(createFallenLog(8, -8, 0.4));
+    timberGroup.add(createFallenLog(-12, 7, -0.6));
+    timberGroup.add(createFallenLog(16, -16, 1.2));
+    timberGroup.add(createFallenLog(-8, -18, -1.0));
+    scene.add(timberGroup);
+
+    // 4. Clustered Ground Clutter: Meadow Flowers & Tall Grass Tufts
+    const floraGroup = new THREE.Group();
+    const flowerYellowMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.6 });
+    const flowerPurpleMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, roughness: 0.6 });
+    const grassBladeMat = new THREE.MeshStandardMaterial({ color: 0x4d7c2a, roughness: 0.85, flatShading: true });
+
+    for (let f = 0; f < 65; f++) {
+      const fx = (Math.random() - 0.5) * 140;
+      const fz = (Math.random() - 0.5) * 140;
+      if (Math.hypot(fx, fz) < 7) continue;
+
+      const cluster = new THREE.Group();
+      cluster.position.set(fx, 0, fz);
+
+      // Grass tufts
+      for (let b = 0; b < 4; b++) {
+        const blade = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.85, 4), grassBladeMat);
+        blade.position.set((Math.random() - 0.5) * 0.7, 0.42, (Math.random() - 0.5) * 0.7);
+        blade.rotation.set((Math.random() - 0.5) * 0.3, Math.random() * Math.PI, (Math.random() - 0.5) * 0.3);
+        cluster.add(blade);
+      }
+
+      // Occasional flower
+      if (f % 3 === 0) {
+        const isYellow = f % 2 === 0;
+        const flower = new THREE.Mesh(
+          new THREE.DodecahedronGeometry(0.12, 0),
+          isYellow ? flowerYellowMat : flowerPurpleMat
+        );
+        flower.position.set(0, 0.7, 0);
+        cluster.add(flower);
+      }
+
+      floraGroup.add(cluster);
+    }
+    scene.add(floraGroup);
+
+    // 5. Ambient Atmospheric Particles (Sunbeam Pollen & Night Fireflies)
+    const ambientParticles = [];
+    const pollenGeo = new THREE.SphereGeometry(0.05, 4, 4);
+    const pollenMat = new THREE.MeshBasicMaterial({ color: 0xffdf78, transparent: true, opacity: 0.75 });
+    const fireflyGeo = new THREE.SphereGeometry(0.06, 4, 4);
+    const fireflyMat = new THREE.MeshBasicMaterial({ color: 0x5eead4, transparent: true, opacity: 0.9 });
+
+    for (let p = 0; p < 75; p++) {
+      const isFirefly = p % 3 === 0;
+      const pMesh = new THREE.Mesh(isFirefly ? fireflyGeo : pollenGeo, isFirefly ? fireflyMat : pollenMat);
+      pMesh.position.set(
+        (Math.random() - 0.5) * 60,
+        0.5 + Math.random() * 7,
+        (Math.random() - 0.5) * 60
+      );
+      scene.add(pMesh);
+      ambientParticles.push({
+        mesh: pMesh,
+        speedX: (Math.random() - 0.4) * 0.8,
+        speedY: (Math.random() - 0.5) * 0.4,
+        speedZ: (Math.random() - 0.4) * 0.8,
+        baseY: pMesh.position.y,
+        isFirefly
+      });
     }
 
     /* =========================================================================
@@ -1151,7 +1408,21 @@
       // 7. Update Particles
       updateParticles(dt);
 
-      // 8. Render
+      // 8. Update Valheim Atmosphere (Campfire & Ambient Forest Spores/Fireflies)
+      if (typeof fireLight !== 'undefined') {
+        fireLight.intensity = 2.4 + Math.sin(Date.now() * 0.012) * 0.4 + Math.random() * 0.25;
+      }
+      if (typeof ambientParticles !== 'undefined') {
+        for (let ap of ambientParticles) {
+          ap.mesh.position.x += ap.speedX * dt;
+          ap.mesh.position.z += ap.speedZ * dt;
+          ap.mesh.position.y = ap.baseY + Math.sin(Date.now() * 0.002 + ap.mesh.position.x) * 0.4;
+          if (Math.abs(ap.mesh.position.x) > 35) ap.speedX *= -1;
+          if (Math.abs(ap.mesh.position.z) > 35) ap.speedZ *= -1;
+        }
+      }
+
+      // 9. Render
       renderer.render(scene, camera);
     }
 
