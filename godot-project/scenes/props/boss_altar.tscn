@@ -1,0 +1,87 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/boss_altar.gd" id="1_altar"]
+[ext_resource type="PackedScene" path="res://assets/models/props/rune_stone_a.glb" id="2_rune_a"]
+[ext_resource type="PackedScene" path="res://assets/models/props/rune_stone_b.glb" id="3_rune_b"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_interact"]
+height = 3.0
+radius = 6.0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_slab"]
+top_radius = 2.2
+bottom_radius = 2.4
+height = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_slab"]
+albedo_color = Color(0.28, 0.3, 0.32, 1)
+roughness = 0.85
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_bowl"]
+top_radius = 0.8
+bottom_radius = 0.5
+height = 0.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bowl"]
+albedo_color = Color(0.18, 0.18, 0.22, 1)
+metallic = 0.6
+roughness = 0.4
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_solid"]
+height = 0.6
+radius = 2.3
+
+[node name="BossAltar" type="Node3D"]
+script = ExtResource("1_altar")
+
+[node name="StoneSlab" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+mesh = SubResource("CylinderMesh_slab")
+surface_material_override/0 = SubResource("StandardMaterial3D_slab")
+
+[node name="OfferingBowl" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+mesh = SubResource("CylinderMesh_bowl")
+surface_material_override/0 = SubResource("StandardMaterial3D_bowl")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="."]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+shape = SubResource("CylinderShape3D_solid")
+
+[node name="RuneStone_North" parent="." instance=ExtResource("2_rune_a")]
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 0, 0, -4.5)
+
+[node name="RuneStone_South" parent="." instance=ExtResource("2_rune_a")]
+transform = Transform3D(-1.4, 0, 0, 0, 1.4, 0, 0, 0, -1.4, 0, 0, 4.5)
+
+[node name="RuneStone_East" parent="." instance=ExtResource("3_rune_b")]
+transform = Transform3D(0, 0, 1.4, 0, 1.4, 0, -1.4, 0, 0, 4.5, 0, 0)
+
+[node name="RuneStone_West" parent="." instance=ExtResource("3_rune_b")]
+transform = Transform3D(0, 0, -1.4, 0, 1.4, 0, 1.4, 0, 0, -4.5, 0, 0)
+
+[node name="RuneLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+light_color = Color(0.2, 0.85, 1, 1)
+light_energy = 2.5
+omni_range = 10.0
+
+[node name="InteractArea" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="InteractArea"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+shape = SubResource("CylinderShape3D_interact")
+
+[node name="PromptLabel" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+billboard = 1
+no_depth_test = true
+render_priority = 8
+font_size = 28
+outline_size = 8
+outline_modulate = Color(0, 0, 0, 1)
+text = "🏛️ ALTAR PENJAGA RIMBA"

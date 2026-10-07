@@ -191,6 +191,8 @@ func die() -> void:
 	var main_node = get_tree().current_scene
 	if main_node.has_method("on_enemy_killed"):
 		main_node.on_enemy_killed()
+	if player != null and player.has_method("add_trophy"):
+		player.add_trophy(1)
 		
 	await get_tree().create_timer(1.8).timeout
 	queue_free()

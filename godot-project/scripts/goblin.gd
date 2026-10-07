@@ -155,7 +155,9 @@ func spawn_text(txt: String, col: Color, sz: float) -> void:
 
 func die() -> void:
 	died.emit()
+	if player != null and player.has_method("add_trophy"):
+		player.add_trophy(1)
 	var main_node = get_tree().current_scene
-	if main_node.has_method("on_enemy_killed"):
+	if main_node != null and main_node.has_method("on_enemy_killed"):
 		main_node.on_enemy_killed()
 	queue_free()

@@ -102,12 +102,47 @@
     {
       "id": 3,
       "title": "Biome Boss Summoning & The Black Forest Altar",
-      "status": "planned",
+      "status": "completed",
       "pillars": [
-        "Ancient altar requiring trophy sacrifices to summon boss",
-        "Forest Beast boss with thunder stomp, horn charge, and summon minions",
-        "Cinematic boss health bar and triumphant Nordic victory anthem"
-      ]
+        "Ancient altar requiring trophy sacrifices (3 Trophies) to summon boss",
+        "Ancient Forest Beast boss with Ground Stomp AoE, Horn Charge, and Howl Minion Summoning",
+        "Finewood Bow [4] archery system with trajectory physics, aiming crosshair, and draw stamina",
+        "Cinematic boss health bar HUD, storm lighting shifts, and trophy drop progression"
+      ],
+      "assignments": {
+        "worker-1-gameplay": {
+          "role": "Lead Gameplay & Character Engineer",
+          "tasks": [
+            "Add WeaponType.BOW [4] with procedural Finewood Bow model and bowstring",
+            "Implement Arrow scene (arrow.tscn, arrow.gd) with gravity trajectory and piercing damage",
+            "Add bow draw charge aiming mechanic with stamina drain and camera zoom"
+          ]
+        },
+        "worker-2-combatai": {
+          "role": "Combat & Monster AI Specialist",
+          "tasks": [
+            "Implement Boss Forest Beast AI (boss_forest_beast.gd, scenes/boss_forest_beast.tscn)",
+            "Phase 1: Melee claw sweep and Ground Stomp AoE shockwave",
+            "Phase 2 Enrage: Horn Charge tree demolition rush and Minion summoning howl"
+          ]
+        },
+        "worker-3-systems": {
+          "role": "Systems & Data Architect",
+          "tasks": [
+            "Implement Boss Altar (boss_altar.gd, scenes/props/boss_altar.tscn) with 3 Trophy sacrifice ritual",
+            "Add HUD Boss Health Bar, Trophy Counter, and Crosshair reticle in scenes/main.tscn",
+            "Integrate storm lighting sky override during boss battle in scripts/main.gd"
+          ]
+        },
+        "worker-4-qa-reviewer": {
+          "role": "Code Reviewer & Integration Specialist",
+          "tasks": [
+            "Audit GDScript syntax and node links across arrow, boss, altar, and main scenes",
+            "Update Three.js Web Prototype at port 8080 with Sprint 3 mechanics",
+            "Trigger GitHub Actions CI build and deploy verified Windows x64 binary"
+          ]
+        }
+      }
     },
     {
       "id": 4,

@@ -43,9 +43,11 @@ var is_exhausted: bool = false
 var anim_player: AnimationPlayer = null
 
 # Combat state
-enum WeaponType { SWORD_SHIELD, SPEAR, CLUB }
+enum WeaponType { SWORD_SHIELD, SPEAR, CLUB, BOW }
 var current_weapon: WeaponType = WeaponType.SWORD_SHIELD
 signal weapon_changed(new_weapon_name: String, damage_type: String)
+signal trophies_changed(count: int)
+var trophies: int = 0
 
 var is_attacking: bool = false
 var attack_timer: float = 0.0
@@ -58,6 +60,10 @@ var charge_timer: float = 0.0
 var max_charge_time: float = 0.38
 var heavy_attack_cost: float = 28.0
 var spear_mesh_instance: Node3D = null
+var bow_mesh_instance: Node3D = null
+var arrow_scene = preload("res://scenes/arrow.tscn")
+var is_aiming_bow: bool = false
+var bow_draw_timer: float = 0.0
 
 var is_blocking: bool = false
 var parry_timer: float = 0.0
@@ -125,12 +131,46 @@ func setup_knight_model() -> void:
 		handslot_r.add_child(spear_mesh_instance)
 		spear_mesh_instance.visible = false
 		
+	# Build procedural Finewood Bow on handslot.l
+	var handslot_l = knight_model.find_child("handslot.l", true, false)
+	if handslot_l != null and bow_mesh_instance == null:
+		bow_mesh_instance = Node3D.new()
+		bow_mesh_instance.name = "Finewood_Bow"
+		var bow_body = MeshInstance3D.new()
+		var bow_mesh = TorusMesh.new()
+		bow_mesh.inner_radius = 0.55
+		bow_mesh.outer_radius = 0.62
+		var bow_mat = StandardMaterial3D.new()
+		bow_mat.albedo_color = Color(0.65, 0.45, 0.25)
+		bow_body.mesh = bow_mesh
+		bow_body.material_override = bow_mat
+		bow_body.rotation.y = deg_to_rad(90)
+		bow_body.scale = Vector3(0.5, 1.0, 0.5)
+		bow_mesh_instance.add_child(bow_body)
+		
+		# Bow string
+		var string_mesh_inst = MeshInstance3D.new()
+		var s_mesh = CylinderMesh.new()
+		s_mesh.top_radius = 0.005
+		s_mesh.bottom_radius = 0.005
+		s_mesh.height = 1.1
+		var str_mat = StandardMaterial3D.new()
+		str_mat.albedo_color = Color(0.95, 0.95, 0.95)
+		string_mesh_inst.mesh = s_mesh
+		string_mesh_inst.material_override = str_mat
+		bow_mesh_instance.add_child(string_mesh_inst)
+		
+		handslot_l.add_child(bow_mesh_instance)
+		bow_mesh_instance.visible = false
+		
 	switch_weapon(WeaponType.SWORD_SHIELD)
 
 func switch_weapon(type: WeaponType) -> void:
 	if is_attacking or is_rolling:
 		return
 	current_weapon = type
+	is_aiming_bow = false
+	bow_draw_timer = 0.0
 	
 	if knight_model == null:
 		return
@@ -149,6 +189,7 @@ func switch_weapon(type: WeaponType) -> void:
 			if shield: shield.visible = true
 			if two_h: two_h.visible = false
 			if spear_mesh_instance: spear_mesh_instance.visible = false
+			if bow_mesh_instance: bow_mesh_instance.visible = false
 			spawn_text("⚔️ SWORD & SHIELD (Slashing)", Color(0.9, 0.9, 1.0), 1.2)
 			weapon_changed.emit("Sword & Shield", "Slashing")
 		WeaponType.SPEAR:
@@ -156,6 +197,7 @@ func switch_weapon(type: WeaponType) -> void:
 			if shield: shield.visible = false
 			if two_h: two_h.visible = false
 			if spear_mesh_instance: spear_mesh_instance.visible = true
+			if bow_mesh_instance: bow_mesh_instance.visible = false
 			spawn_text("🗡️ FLINT SPEAR (Piercing)", Color(0.3, 0.9, 1.0), 1.2)
 			weapon_changed.emit("Flint Spear", "Piercing")
 		WeaponType.CLUB:
@@ -163,8 +205,17 @@ func switch_weapon(type: WeaponType) -> void:
 			if shield: shield.visible = false
 			if two_h: two_h.visible = true
 			if spear_mesh_instance: spear_mesh_instance.visible = false
+			if bow_mesh_instance: bow_mesh_instance.visible = false
 			spawn_text("🔨 WAR CLUB (Blunt)", Color(1.0, 0.75, 0.2), 1.2)
 			weapon_changed.emit("War Club", "Blunt")
+		WeaponType.BOW:
+			if sword: sword.visible = false
+			if shield: shield.visible = false
+			if two_h: two_h.visible = false
+			if spear_mesh_instance: spear_mesh_instance.visible = false
+			if bow_mesh_instance: bow_mesh_instance.visible = true
+			spawn_text("🏹 FINEWOOD BOW (Ranged)", Color(0.4, 0.95, 0.6), 1.2)
+			weapon_changed.emit("Finewood Bow", "Piercing")
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -184,6 +235,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			switch_weapon(WeaponType.SPEAR)
 		elif event.keycode == KEY_3:
 			switch_weapon(WeaponType.CLUB)
+		elif event.keycode == KEY_4:
+			switch_weapon(WeaponType.BOW)
 			
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
@@ -191,16 +244,27 @@ func _unhandled_input(event: InputEvent) -> void:
 				if Input.mouse_mode == Input.MOUSE_MODE_VISIBLE:
 					Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 					return
-				is_charging_heavy = true
-				charge_timer = 0.0
-			else:
-				if is_charging_heavy:
-					if charge_timer >= max_charge_time:
-						try_heavy_attack()
-					else:
-						try_attack()
-					is_charging_heavy = false
+				if current_weapon == WeaponType.BOW:
+					is_aiming_bow = true
+					bow_draw_timer = 0.0
+					play_anim("Blocking")
+				else:
+					is_charging_heavy = true
 					charge_timer = 0.0
+			else:
+				if current_weapon == WeaponType.BOW:
+					if is_aiming_bow:
+						fire_arrow()
+						is_aiming_bow = false
+						bow_draw_timer = 0.0
+				else:
+					if is_charging_heavy:
+						if charge_timer >= max_charge_time:
+							try_heavy_attack()
+						else:
+							try_attack()
+						is_charging_heavy = false
+						charge_timer = 0.0
 
 func _physics_process(delta: float) -> void:
 	handle_stamina(delta)
@@ -263,15 +327,25 @@ func _physics_process(delta: float) -> void:
 	var target_speed := walk_speed
 	var wants_sprint: bool = (Input.is_key_pressed(KEY_SHIFT) or Input.is_action_pressed("sprint")) and input_dir.length_squared() > 0.0
 	
-	if is_blocking:
+	if current_weapon == WeaponType.BOW and is_aiming_bow:
 		target_speed = walk_speed * 0.45
-	elif is_exhausted:
-		target_speed = exhausted_speed
-	elif wants_sprint and stamina > 0.0:
-		target_speed = sprint_speed
-		consume_stamina(sprint_cost_per_sec * delta)
+		bow_draw_timer = min(1.0, bow_draw_timer + delta * 1.6)
+		consume_stamina(12.0 * delta)
+		# Aiming zooms camera and aligns player towards camera facing
+		spring_arm.spring_length = lerp(spring_arm.spring_length, 2.4, 8.0 * delta)
+		var aim_yaw := atan2(cam_forward.x, cam_forward.z)
+		visual_root.rotation.y = lerp_angle(visual_root.rotation.y, aim_yaw, 16.0 * delta)
 	else:
-		target_speed = walk_speed
+		spring_arm.spring_length = lerp(spring_arm.spring_length, 4.5, 6.0 * delta)
+		if is_blocking:
+			target_speed = walk_speed * 0.45
+		elif is_exhausted:
+			target_speed = exhausted_speed
+		elif wants_sprint and stamina > 0.0:
+			target_speed = sprint_speed
+			consume_stamina(sprint_cost_per_sec * delta)
+		else:
+			target_speed = walk_speed
 
 	# Apply horizontal velocity & animation
 	if move_dir.length() > 0.0:
@@ -591,3 +665,31 @@ func spawn_text(txt: String, col: Color, sz: float) -> void:
 	get_parent().add_child(ft)
 	ft.global_position = global_position + Vector3(0, 1.8, 0)
 	ft.setup(txt, col, sz)
+
+func fire_arrow() -> void:
+	if is_exhausted or stamina < 10.0:
+		spawn_text("OUT OF STAMINA!", Color(1.0, 0.4, 0.2), 1.0)
+		return
+		
+	consume_stamina(14.0)
+	var arrow = arrow_scene.instantiate()
+	get_tree().root.add_child(arrow)
+	
+	# Spawn arrow at player chest/hand
+	var cam_fwd = -camera.global_transform.basis.z
+	var spawn_pos = global_position + Vector3(0, 1.25, 0) + (cam_fwd * 0.75)
+	arrow.global_position = spawn_pos
+	
+	var charge_ratio = clamp(bow_draw_timer, 0.25, 1.0)
+	var arrow_speed = lerp(32.0, 56.0, charge_ratio)
+	var arrow_dmg = lerp(40.0, 92.0, charge_ratio)
+	
+	arrow.launch(cam_fwd, arrow_speed, arrow_dmg, self)
+	add_camera_shake(0.2)
+	play_anim("1H_Melee_Attack_Stab")
+	spawn_text("🏹 ARROW (%.0f dmg)" % arrow_dmg, Color(0.4, 0.95, 0.6), 1.1)
+
+func add_trophy(amount: int = 1) -> void:
+	trophies += amount
+	trophies_changed.emit(trophies)
+	spawn_text("🏆 +%d TROPHY! (Total: %d)" % [amount, trophies], Color(1.0, 0.85, 0.2), 1.6)

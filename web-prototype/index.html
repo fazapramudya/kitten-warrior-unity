@@ -303,9 +303,10 @@
         <div><span class="key-badge">WASD</span> Gerak</div>
         <div><span class="key-badge">Shift</span> Sprint</div>
         <div><span class="key-badge">Spasi</span> Lompat</div>
-        <div><span class="key-badge">1 2 3</span> Ganti Senjata (Pedang/Tombak/Gada)</div>
-        <div><span class="key-badge">Klik Kiri</span> Serang</div>
-        <div><span class="key-badge">Tahan Klik</span> Heavy Strike</div>
+        <div><span class="key-badge">1 2 3 4</span> Senjata (Pedang/Tombak/Gada/Busur)</div>
+        <div><span class="key-badge">Klik Kiri</span> Serang / Tembak</div>
+        <div><span class="key-badge">Tahan Klik</span> Heavy Strike / Bidik</div>
+        <div><span class="key-badge">E</span> Ritual Altar Boss</div>
       </div>
     </div>
   </div>
@@ -313,13 +314,14 @@
   <div id="click-overlay">
     <div class="start-box">
       <div class="game-title">⚔️ Kitten Warrior 🐾</div>
-      <div class="game-subtitle">3D Valheim-Style Action RPG — Sprint #2: Tactical Weapon Arsenal & Heavy Strike</div>
+      <div class="game-subtitle">3D Valheim-Style Action RPG — Sprint #3: Black Forest Boss Altar & Archery Combat</div>
       <p style="font-size: 14px; color: #eeddc5; line-height: 1.6; margin-bottom: 24px;">
-        Kendalikan ksatria kucing di atmosfer rimba Nordik <strong>Valheim</strong>! Tim Multi-Agent Hermes3D baru saja menyelesaikan <strong>Sprint #2 Weapon Arsenal</strong>:<br>
-        🗡️ <strong>3 Tipe Senjata Berbeda:</strong> [1] Pedang & Perisai (Slashing), [2] Tombak Batu Api (Piercing, bonus damage vs Goblin & Slime), [3] Gada Tempur (Blunt, crushing damage & posture stun vs Skeleton)!<br>
-        💥 <strong>Heavy Charged Strike:</strong> Tahan Klik Kiri untuk mengisi daya serangan mematikan berkekuatan 3x Damage & Stagger!<br>
-        🌲 <strong>Tebang Pohon Interaktif:</strong> Tebas pohon pinus untuk kayu dan saksikan pohon roboh berguling.<br>
-        🍄 <strong>Food Buffs & Day/Night:</strong> Makan jamur hutan untuk menambah Max HP & Stamina; hangatkan diri di Campfire (Rested Buff +100%).
+        Kendalikan ksatria kucing di atmosfer rimba Nordik <strong>Valheim</strong>! Tim Multi-Agent Hermes3D telah mengimplementasikan <strong>Sprint #3 Boss Encounter & Archery</strong>:<br>
+        👑 <strong>Ancient Boss Summoning Altar:</strong> Kumpulkan 3 Trophy dan datangi Altar Batu Runik untuk memanggil <strong>Ancient Forest Beast</strong>!<br>
+        🐗 <strong>Titan of the Black Forest:</strong> Hadapi bos penjaga hutan dengan serangan Ground Stomp AoE, Horn Charge beruntun, dan Howl pemanggil minion.<br>
+        🏹 <strong>Finewood Bow [4]:</strong> Bidik dan lepaskan anak panah melengkung berkecepatan tinggi dari jarak jauh!<br>
+        🗡️ <strong>4 Tipe Senjata:</strong> [1] Pedang & Perisai (Slashing), [2] Tombak (Piercing), [3] Gada Tempur (Blunt), [4] Busur Panah.<br>
+        🌲 <strong>Survival Valheim:</strong> Tebang pohon pinus, kumpulkan jamur makanan untuk buff HP & Stamina, hangatkan diri di dekat Api Unggun.
       </p>
       <div style="display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap;">
         <button class="start-btn">Mulai Bermain di Browser</button>
@@ -1241,6 +1243,9 @@
       } else if (e.code === 'Digit3') {
         currentWeapon = 'club';
         showFloatingDamage(playerGroup.position, '🔨 CLUB (Blunt)', '#ffaa44');
+      } else if (e.code === 'Digit4') {
+        currentWeapon = 'bow';
+        showFloatingDamage(playerGroup.position, '🏹 FINEWOOD BOW (Ranged)', '#55ff99');
       }
     });
 

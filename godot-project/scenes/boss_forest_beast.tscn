@@ -1,0 +1,89 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/boss_forest_beast.gd" id="1_boss"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_boss"]
+radius = 1.5
+height = 3.8
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_body"]
+radius = 1.3
+height = 2.9
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fur"]
+albedo_color = Color(0.2, 0.26, 0.18, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_head"]
+size = Vector3(1.4, 1.3, 1.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_head"]
+albedo_color = Color(0.16, 0.2, 0.15, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_horn"]
+top_radius = 0.05
+bottom_radius = 0.24
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_horn"]
+albedo_color = Color(0.86, 0.82, 0.7, 1)
+roughness = 0.4
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_stomp"]
+radius = 8.5
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_sweep"]
+radius = 4.5
+
+[node name="BossForestBeast" type="CharacterBody3D"]
+collision_layer = 2
+collision_mask = 7
+script = ExtResource("1_boss")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9, 0)
+shape = SubResource("CapsuleShape3D_boss")
+
+[node name="VisualRoot" type="Node3D" parent="."]
+
+[node name="BodyMesh" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+mesh = SubResource("CapsuleMesh_body")
+surface_material_override/0 = SubResource("StandardMaterial3D_fur")
+
+[node name="HeadMesh" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.7, -1.0)
+mesh = SubResource("BoxMesh_head")
+surface_material_override/0 = SubResource("StandardMaterial3D_head")
+
+[node name="LeftHorn" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(0.866025, -0.5, 0, 0.433013, 0.75, -0.5, 0.25, 0.433013, 0.866025, -0.85, 3.7, -0.9)
+mesh = SubResource("CylinderMesh_horn")
+surface_material_override/0 = SubResource("StandardMaterial3D_horn")
+
+[node name="RightHorn" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(0.866025, 0.5, 0, -0.433013, 0.75, -0.5, -0.25, 0.433013, 0.866025, 0.85, 3.7, -0.9)
+mesh = SubResource("CylinderMesh_horn")
+surface_material_override/0 = SubResource("StandardMaterial3D_horn")
+
+[node name="EyesLight" type="OmniLight3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.7, -1.9)
+light_color = Color(0.25, 0.85, 1, 1)
+light_energy = 3.5
+omni_range = 6.0
+
+[node name="StompArea" type="Area3D" parent="VisualRoot"]
+collision_layer = 0
+collision_mask = 5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="VisualRoot/StompArea"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+shape = SubResource("SphereShape3D_stomp")
+
+[node name="SweepArea" type="Area3D" parent="VisualRoot"]
+collision_layer = 0
+collision_mask = 5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="VisualRoot/SweepArea"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -1.8)
+shape = SubResource("SphereShape3D_sweep")
