@@ -1,0 +1,19 @@
+[
+  {
+    "sprint_id": 1,
+    "title": "Valheim Survival Loop: Day/Night Cycle, Food Buffs, Interactive Tree Chopping & Stagger Combat",
+    "completed_at": "2026-10-07T03:48:00Z",
+    "status": "completed",
+    "commit": "6026876",
+    "github_actions_run": 37568258771,
+    "artifact_size": 71828518,
+    "deliverables": [
+      "ChoppableTree entity with wobble response, timber felling animation, and wood drops",
+      "Food buff system with Red Mushrooms (+25 HP, +20 Stamina for 90s) and multi-food buff stacking",
+      "Dynamic Day/Night cycle with sun rotation, dusk amber lighting, and moonlight",
+      "Cold debuff (-45% stamina regen at night) and Rested buff (+100% stamina regen near Campfire)",
+      "Combat Stagger posture meter with 2.0x critical damage vulnerability and Timed Parry counter-stagger",
+      "Autonomous Sprint Orchestrator connecting all 4 Hermes3D agents to execute game iterations"
+    ]
+  }
+]

@@ -1,12 +1,12 @@
 {
   "project": "Kitten Warrior",
   "vision": "3D Third-Person Action RPG inspired by Valheim (Iron Gate Studios) with a Cat Knight protagonist",
-  "current_sprint": 1,
+  "current_sprint": 2,
   "sprints": [
     {
       "id": 1,
       "title": "Valheim Survival Loop: Day/Night Cycle, Food Buffs, Interactive Tree Chopping & Stagger Combat",
-      "status": "in_progress",
+      "status": "completed",
       "pillars": [
         "Dynamic Day/Night lighting and atmosphere (dawn, day, sunset, cold night)",
         "Valheim-style food system (eat up to 3 foods for max HP and Stamina boosts)",
