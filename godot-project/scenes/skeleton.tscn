@@ -1,0 +1,33 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/skeleton.gd" id="1_skeleton"]
+[ext_resource type="PackedScene" path="res://assets/models/enemies/skeleton.glb" id="2_skeleton_model"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_skeleton"]
+radius = 0.42
+height = 1.4
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_attack"]
+size = Vector3(1.6, 1.4, 2.0)
+
+[node name="SkeletonWarrior" type="CharacterBody3D" groups=["enemies"]]
+collision_layer = 2
+collision_mask = 3
+script = ExtResource("1_skeleton")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("CapsuleShape3D_skeleton")
+
+[node name="VisualRoot" type="Node3D" parent="."]
+
+[node name="SkeletonModel" parent="VisualRoot" instance=ExtResource("2_skeleton_model")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0, 0)
+
+[node name="AttackArea" type="Area3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 1.0)
+collision_layer = 4
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="VisualRoot/AttackArea"]
+shape = SubResource("BoxShape3D_attack")

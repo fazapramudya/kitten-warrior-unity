@@ -1,17 +1,18 @@
 extends Node3D
 
 @onready var player = $Player
-@onready var health_bar: ProgressBar = $HUD/MarginContainer/VBoxContainer/HealthBar
-@onready var stamina_bar: ProgressBar = $HUD/MarginContainer/VBoxContainer/StaminaBar
-@onready var kill_label: Label = $HUD/MarginContainer/VBoxContainer/KillLabel
-@onready var status_label: Label = $HUD/MarginContainer/VBoxContainer/StatusLabel
+@onready var health_bar: ProgressBar = $HUD/MarginContainer/PanelContainer/Margin/VBoxContainer/HealthBar
+@onready var stamina_bar: ProgressBar = $HUD/MarginContainer/PanelContainer/Margin/VBoxContainer/StaminaBar
+@onready var kill_label: Label = $HUD/MarginContainer/PanelContainer/Margin/VBoxContainer/KillLabel
+@onready var status_label: Label = $HUD/MarginContainer/PanelContainer/Margin/VBoxContainer/TitleRow/StatusLabel
 
 var kills: int = 0
 var slime_scene = preload("res://scenes/slime.tscn")
 var goblin_scene = preload("res://scenes/goblin.tscn")
+var skeleton_scene = preload("res://scenes/skeleton.tscn")
 
 var spawn_timer: float = 0.0
-var spawn_interval: float = 6.0
+var spawn_interval: float = 5.5
 
 func _ready() -> void:
 	if player:
@@ -64,10 +65,18 @@ func spawn_monster_around_player() -> void:
 		
 	var angle := randf() * TAU
 	var dist := randf_range(14.0, 26.0)
-	var spawn_pos = player.global_position + Vector3(cos(angle) * dist, 1.0, sin(angle) * dist)
+	var spawn_pos = player.global_position + Vector3(cos(angle) * dist, 0.5, sin(angle) * dist)
 	
-	# 60% Slime, 40% Goblin
-	var monster_scene = slime_scene if randf() < 0.6 else goblin_scene
+	# Weighted random: 40% Skeleton, 35% Goblin, 25% Slime
+	var roll := randf()
+	var monster_scene = skeleton_scene
+	if roll < 0.25:
+		monster_scene = slime_scene
+	elif roll < 0.60:
+		monster_scene = goblin_scene
+	else:
+		monster_scene = skeleton_scene
+		
 	var monster = monster_scene.instantiate()
 	monster.global_position = spawn_pos
 	add_child(monster)

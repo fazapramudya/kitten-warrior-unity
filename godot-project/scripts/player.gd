@@ -33,15 +33,14 @@ var is_exhausted: bool = false
 @onready var spring_arm: SpringArm3D = $CameraPivot/SpringArm3D
 @onready var camera: Camera3D = $CameraPivot/SpringArm3D/Camera3D
 @onready var visual_root: Node3D = $VisualRoot
-@onready var sword_pivot: Node3D = $VisualRoot/SwordPivot
-@onready var shield_pivot: Node3D = $VisualRoot/ShieldPivot
-@onready var cape_node: Node3D = $VisualRoot/Cape
+@onready var knight_model: Node3D = $VisualRoot/KnightModel
 @onready var attack_area: Area3D = $VisualRoot/AttackArea
+var anim_player: AnimationPlayer = null
 
 # Combat state
 var is_attacking: bool = false
 var attack_timer: float = 0.0
-var attack_duration: float = 0.32
+var attack_duration: float = 0.45
 var combo_step: int = 0
 var combo_reset_timer: float = 0.0
 
@@ -51,7 +50,7 @@ var parry_window: float = 0.25
 
 var is_rolling: bool = false
 var roll_timer: float = 0.0
-var roll_duration: float = 0.42
+var roll_duration: float = 0.45
 var roll_direction: Vector3 = Vector3.FORWARD
 var is_invincible: bool = false
 
@@ -66,6 +65,32 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	stamina_changed.emit(stamina, max_stamina)
 	health_changed.emit(health, max_health)
+	
+	setup_knight_model()
+
+func setup_knight_model() -> void:
+	if knight_model == null:
+		return
+		
+	# Find AnimationPlayer
+	anim_player = knight_model.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	if anim_player != null:
+		anim_player.play("Idle")
+		
+	# Setup weapon visibility: show 1H Sword & Round Shield, hide the rest
+	var weapons_to_hide = ["1H_Sword_Offhand", "Badge_Shield", "Rectangle_Shield", "Spike_Shield", "2H_Sword"]
+	for w_name in weapons_to_hide:
+		var node = knight_model.find_child(w_name, true, false)
+		if node != null:
+			node.visible = false
+			
+	var sword = knight_model.find_child("1H_Sword", true, false)
+	if sword != null:
+		sword.visible = true
+		
+	var shield = knight_model.find_child("Round_Shield", true, false)
+	if shield != null:
+		shield.visible = true
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -97,13 +122,10 @@ func _physics_process(delta: float) -> void:
 		if not is_blocking:
 			is_blocking = true
 			parry_timer = parry_window
-			shield_pivot.position = Vector3(0.0, 0.5, 0.45) # raise shield
-			shield_pivot.rotation.y = deg_to_rad(90.0)
+			play_anim("Blocking")
 	else:
 		if is_blocking:
 			is_blocking = false
-			shield_pivot.position = Vector3(-0.45, 0.5, 0.05) # lower shield
-			shield_pivot.rotation.y = 0.0
 
 	if parry_timer > 0.0:
 		parry_timer -= delta
@@ -141,13 +163,9 @@ func _physics_process(delta: float) -> void:
 		roll_timer -= delta
 		velocity.x = roll_direction.x * roll_speed
 		velocity.z = roll_direction.z * roll_speed
-		# Roll 360 spin
-		var roll_progress := 1.0 - (roll_timer / roll_duration)
-		visual_root.rotation.x = roll_progress * TAU
 		if roll_timer <= 0.0:
 			is_rolling = false
 			is_invincible = false
-			visual_root.rotation.x = 0.0
 		move_and_slide()
 		return
 
@@ -156,7 +174,7 @@ func _physics_process(delta: float) -> void:
 	var wants_sprint: bool = (Input.is_key_pressed(KEY_SHIFT) or Input.is_action_pressed("sprint")) and input_dir.length_squared() > 0.0
 	
 	if is_blocking:
-		target_speed = walk_speed * 0.5
+		target_speed = walk_speed * 0.45
 	elif is_exhausted:
 		target_speed = exhausted_speed
 	elif wants_sprint and stamina > 0.0:
@@ -165,7 +183,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		target_speed = walk_speed
 
-	# Apply horizontal velocity
+	# Apply horizontal velocity & animation
 	if move_dir.length() > 0.0:
 		velocity.x = move_dir.x * target_speed
 		velocity.z = move_dir.z * target_speed
@@ -174,20 +192,25 @@ func _physics_process(delta: float) -> void:
 		var target_rot_y := atan2(move_dir.x, move_dir.z)
 		visual_root.rotation.y = lerp_angle(visual_root.rotation.y, target_rot_y, rotation_speed * delta)
 		
-		# Procedural cat running bobbing
-		visual_root.position.y = abs(sin(Time.get_ticks_msec() * 0.013)) * 0.12
-		
-		# Cape sway
-		if cape_node != null:
-			cape_node.rotation.x = deg_to_rad(-25.0) - (velocity.length() / sprint_speed) * 0.4
+		# Play walking or running animation
+		if not is_attacking and not is_blocking:
+			if wants_sprint and not is_exhausted:
+				play_anim("Running_A")
+			else:
+				play_anim("Walking_A")
 	else:
 		velocity.x = move_toward(velocity.x, 0.0, target_speed * 12.0 * delta)
 		velocity.z = move_toward(velocity.z, 0.0, target_speed * 12.0 * delta)
-		visual_root.position.y = move_toward(visual_root.position.y, 0.0, delta * 2.0)
-		if cape_node != null:
-			cape_node.rotation.x = move_toward(cape_node.rotation.x, deg_to_rad(-8.0), delta * 2.0)
+		
+		if not is_attacking and not is_blocking:
+			play_anim("Idle")
 
 	move_and_slide()
+
+func play_anim(anim_name: String) -> void:
+	if anim_player != null and anim_player.has_animation(anim_name):
+		if anim_player.current_animation != anim_name:
+			anim_player.play(anim_name)
 
 func start_roll(dir: Vector3) -> void:
 	is_rolling = true
@@ -195,6 +218,7 @@ func start_roll(dir: Vector3) -> void:
 	roll_timer = roll_duration
 	roll_direction = dir
 	visual_root.rotation.y = atan2(dir.x, dir.z)
+	play_anim("Dodge_Forward")
 	spawn_text("ROLL", Color(0.6, 0.8, 1.0), 0.9)
 
 func consume_stamina(amount: float) -> void:
@@ -228,13 +252,19 @@ func try_attack() -> void:
 	
 	var damage := 26.0
 	var knock_force := 9.0
+	var anim_to_play := "1H_Melee_Attack_Slice_Horizontal"
+	
 	if combo_step == 2:
-		damage = 34.0
-		knock_force = 11.0
+		damage = 36.0
+		knock_force = 12.0
+		anim_to_play = "1H_Melee_Attack_Slice_Diagonal"
 	elif combo_step == 3:
-		damage = 52.0
-		knock_force = 18.0
+		damage = 56.0
+		knock_force = 19.0
+		anim_to_play = "1H_Melee_Attack_Chop"
 		add_camera_shake(0.35)
+	
+	play_anim(anim_to_play)
 	
 	# Detect hit targets in attack area
 	var hit_count := 0
@@ -256,21 +286,8 @@ func handle_combat(delta: float) -> void:
 
 	if is_attacking:
 		attack_timer -= delta
-		var progress := 1.0 - (attack_timer / attack_duration)
-		if combo_step == 1:
-			sword_pivot.rotation.y = sin(progress * PI) * 2.4
-			sword_pivot.rotation.x = -sin(progress * PI) * 0.8
-		elif combo_step == 2:
-			sword_pivot.rotation.y = -sin(progress * PI) * 2.4
-			sword_pivot.rotation.x = -sin(progress * PI) * 0.8
-		else:
-			# Overhead slash
-			sword_pivot.rotation.x = -sin(progress * PI) * 2.6
-			sword_pivot.rotation.y = 0.0
-			
 		if attack_timer <= 0.0:
 			is_attacking = false
-			sword_pivot.rotation = Vector3.ZERO
 
 func receive_attack(amount: float, knockback: Vector3, attacker: Node3D) -> String:
 	if is_invincible:
@@ -282,6 +299,7 @@ func receive_attack(amount: float, knockback: Vector3, attacker: Node3D) -> Stri
 			# PERFECT PARRY!
 			spawn_text("🛡️ PARRY!", Color(1.0, 0.85, 0.2), 1.6)
 			add_camera_shake(0.4)
+			play_anim("Block_Hit")
 			return "PARRIED"
 		else:
 			# Normal Block
@@ -290,6 +308,7 @@ func receive_attack(amount: float, knockback: Vector3, attacker: Node3D) -> Stri
 			health_changed.emit(health, max_health)
 			consume_stamina(14.0)
 			velocity += knockback * 0.35
+			play_anim("Block_Hit")
 			spawn_text("BLOCKED " + str(int(amount - blocked_dmg)), Color(0.7, 0.8, 0.9), 1.0)
 			return "BLOCKED"
 
@@ -298,6 +317,7 @@ func receive_attack(amount: float, knockback: Vector3, attacker: Node3D) -> Stri
 	health_changed.emit(health, max_health)
 	velocity += knockback
 	add_camera_shake(0.5)
+	play_anim("Hit_A")
 	spawn_text("-" + str(int(amount)), Color(1.0, 0.2, 0.2), 1.2)
 	
 	if health <= 0.0:

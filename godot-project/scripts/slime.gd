@@ -15,8 +15,9 @@ var hop_interval: float = 1.1
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 18.0)
 
 @onready var visual_root: Node3D = $VisualRoot
-@onready var mesh_instance: MeshInstance3D = $VisualRoot/BodyMesh
+@onready var model: Node3D = $VisualRoot/Model
 @onready var death_particles: GPUParticles3D = $DeathParticles
+var anim_player: AnimationPlayer = null
 
 var flash_timer: float = 0.0
 var floating_text_scene = preload("res://scenes/floating_text.tscn")
@@ -26,6 +27,11 @@ func _ready() -> void:
 	health = max_health
 	player = get_tree().get_first_node_in_group("player")
 	hop_interval = randf_range(0.85, 1.3)
+	
+	if model != null:
+		anim_player = model.find_child("AnimationPlayer", true, false) as AnimationPlayer
+		if anim_player != null and anim_player.has_animation("Slime_Idle"):
+			anim_player.play("Slime_Idle")
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
@@ -33,17 +39,9 @@ func _physics_process(delta: float) -> void:
 		
 	if not is_on_floor():
 		velocity.y -= gravity * delta
-		# Stretch in air
 		visual_root.scale = visual_root.scale.lerp(Vector3(0.85, 1.25, 0.85), 10.0 * delta)
 	else:
-		# Squash on land
 		visual_root.scale = visual_root.scale.lerp(Vector3(1.15, 0.85, 1.15), 12.0 * delta)
-
-	# Flash decay
-	if flash_timer > 0.0:
-		flash_timer -= delta
-		if flash_timer <= 0.0:
-			mesh_instance.material_override = null
 
 	# AI Logic
 	if player == null:
@@ -61,13 +59,17 @@ func _physics_process(delta: float) -> void:
 				velocity.z = dir.z * move_speed
 				velocity.y = hop_force
 				
-				# Look towards player
+				if anim_player != null and anim_player.has_animation("Slime_JumpLoop"):
+					anim_player.play("Slime_JumpLoop")
+				
 				var target_pos = Vector3(player.global_position.x, global_position.y, player.global_position.z)
 				look_at(target_pos, Vector3.UP)
 		else:
 			if is_on_floor():
 				velocity.x = move_toward(velocity.x, 0.0, 5.0 * delta)
 				velocity.z = move_toward(velocity.z, 0.0, 5.0 * delta)
+				if anim_player != null and anim_player.has_animation("Slime_Idle"):
+					anim_player.play("Slime_Idle")
 
 	# Damage player on contact
 	if is_on_floor() and player != null:
@@ -82,15 +84,8 @@ func take_damage(amount: float, knockback: Vector3 = Vector3.ZERO) -> void:
 		return
 	health -= amount
 	velocity = knockback
-	flash_timer = 0.15
 	
 	spawn_text(str(int(amount)), Color(0.9, 1.0, 0.4), 1.0)
-	
-	var flash_mat = StandardMaterial3D.new()
-	flash_mat.albedo_color = Color(1.0, 0.25, 0.25)
-	flash_mat.emission_enabled = true
-	flash_mat.emission = Color(1.0, 0.2, 0.2)
-	mesh_instance.material_override = flash_mat
 	
 	if health <= 0.0:
 		die()
@@ -107,7 +102,6 @@ func die() -> void:
 	is_dead = true
 	died.emit()
 	
-	# Hide visuals and trigger splat particles
 	visual_root.visible = false
 	collision_layer = 0
 	collision_mask = 0
@@ -119,6 +113,5 @@ func die() -> void:
 	if main_node.has_method("on_enemy_killed"):
 		main_node.on_enemy_killed()
 		
-	# Wait for particles before freeing
 	await get_tree().create_timer(0.6).timeout
 	queue_free()

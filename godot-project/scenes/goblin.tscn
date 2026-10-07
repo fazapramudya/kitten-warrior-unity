@@ -1,38 +1,11 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/goblin.gd" id="1_goblin"]
+[ext_resource type="PackedScene" path="res://assets/models/enemies/goblin.glb" id="2_goblin_model"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_goblin"]
 radius = 0.4
 height = 1.4
-
-[sub_resource type="StandardMaterial3D" id="Mat_GoblinSkin"]
-albedo_color = Color(0.32, 0.45, 0.24, 1)
-roughness = 0.85
-
-[sub_resource type="CapsuleMesh" id="Mesh_GoblinBody"]
-material = SubResource("Mat_GoblinSkin")
-radius = 0.32
-height = 0.8
-
-[sub_resource type="SphereMesh" id="Mesh_GoblinHead"]
-material = SubResource("Mat_GoblinSkin")
-radius = 0.28
-height = 0.55
-
-[sub_resource type="PrismMesh" id="Mesh_GoblinEar"]
-material = SubResource("Mat_GoblinSkin")
-size = Vector3(0.14, 0.35, 0.08)
-
-[sub_resource type="StandardMaterial3D" id="Mat_Leather"]
-albedo_color = Color(0.28, 0.18, 0.12, 1)
-roughness = 0.9
-
-[sub_resource type="CylinderMesh" id="Mesh_Loincloth"]
-material = SubResource("Mat_Leather")
-top_radius = 0.34
-bottom_radius = 0.38
-height = 0.3
 
 [sub_resource type="StandardMaterial3D" id="Mat_WoodShaft"]
 albedo_color = Color(0.38, 0.25, 0.15, 1)
@@ -67,25 +40,8 @@ shape = SubResource("CapsuleShape3D_goblin")
 
 [node name="VisualRoot" type="Node3D" parent="."]
 
-[node name="Body" type="MeshInstance3D" parent="VisualRoot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-mesh = SubResource("Mesh_GoblinBody")
-
-[node name="Loincloth" type="MeshInstance3D" parent="VisualRoot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0)
-mesh = SubResource("Mesh_Loincloth")
-
-[node name="Head" type="MeshInstance3D" parent="VisualRoot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0.08)
-mesh = SubResource("Mesh_GoblinHead")
-
-[node name="EarL" type="MeshInstance3D" parent="VisualRoot/Head"]
-transform = Transform3D(0.5, -0.866025, 0, 0.866025, 0.5, 0, 0, 0, 1, -0.32, 0.08, 0)
-mesh = SubResource("Mesh_GoblinEar")
-
-[node name="EarR" type="MeshInstance3D" parent="VisualRoot/Head"]
-transform = Transform3D(0.5, 0.866025, 0, -0.866025, 0.5, 0, 0, 0, 1, 0.32, 0.08, 0)
-mesh = SubResource("Mesh_GoblinEar")
+[node name="GoblinModel" parent="VisualRoot" instance=ExtResource("2_goblin_model")]
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 0, 0.7, 0)
 
 [node name="SpearPivot" type="Node3D" parent="VisualRoot"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.5, 0.2)
