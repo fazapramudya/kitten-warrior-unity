@@ -9,7 +9,18 @@ signal combat_event(event_name: String)
 @export var roll_speed: float = 12.0
 @export var exhausted_speed: float = 2.4
 @export var jump_velocity: float = 6.8
-@export var rotation_speed: float = 14.0
+@export var rotation_speed: float = 12.0
+@export var walk_accel: float = 16.0
+@export var sprint_accel: float = 22.0
+@export var ground_friction: float = 26.0
+@export var air_control: float = 4.5
+
+# Cinematic Third-Person Camera
+@export var base_fov: float = 70.0
+@export var sprint_fov: float = 76.0
+@export var bow_fov: float = 52.0
+@export var camera_shoulder_offset: float = 0.32
+var current_camera_roll: float = 0.0
 
 @export var max_health: float = 100.0
 var health: float = 100.0
@@ -269,14 +280,13 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	handle_stamina(delta)
 	handle_combat(delta)
-	handle_camera_shake(delta)
 	
 	# Block State (Right Click)
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) and not is_rolling and not is_attacking:
 		if not is_blocking:
 			is_blocking = true
 			parry_timer = parry_window
-			play_anim("Blocking")
+			play_anim("Blocking", 0.15)
 	else:
 		if is_blocking:
 			is_blocking = false
@@ -305,38 +315,47 @@ func _physics_process(delta: float) -> void:
 	cam_right = cam_right.normalized()
 	
 	var move_dir := (cam_forward * -input_dir.y + cam_right * input_dir.x).normalized()
+	var wants_sprint: bool = (Input.is_key_pressed(KEY_SHIFT) or Input.is_action_pressed("sprint")) and input_dir.length_squared() > 0.0
 
-	# Dodge Roll (Space or Q while moving or Shift+Space)
-	if (Input.is_action_just_pressed("jump") or Input.is_key_pressed(KEY_SPACE) or Input.is_key_pressed(KEY_Q)) \
-		and is_on_floor() and not is_rolling and not is_exhausted and stamina >= roll_stamina_cost and move_dir.length() > 0.1:
-		start_roll(move_dir)
+	# Cinematic Camera update
+	handle_cinematic_camera(delta, move_dir, wants_sprint)
+
+	# Jump Mechanics (Space)
+	if Input.is_key_pressed(KEY_SPACE) and is_on_floor() and not is_rolling and not is_exhausted and stamina >= jump_stamina_cost:
+		velocity.y = jump_velocity
+		consume_stamina(jump_stamina_cost)
+		play_anim("Jump_Start", 0.12)
+
+	# Dodge Roll (Q, Alt, or Shift+Space)
+	var wants_dodge = (Input.is_key_pressed(KEY_Q) or Input.is_key_pressed(KEY_ALT) or (Input.is_key_pressed(KEY_SPACE) and wants_sprint))
+	if wants_dodge and is_on_floor() and not is_rolling and not is_exhausted and stamina >= roll_stamina_cost:
+		var dodge_dir = move_dir if move_dir.length_squared() > 0.01 else -visual_root.global_transform.basis.z
+		start_roll(dodge_dir.normalized())
 		consume_stamina(roll_stamina_cost)
 
 	# Handle Dodge Roll State
 	if is_rolling:
 		roll_timer -= delta
-		velocity.x = roll_direction.x * roll_speed
-		velocity.z = roll_direction.z * roll_speed
+		var roll_progress = clamp(1.0 - (roll_timer / roll_duration), 0.0, 1.0)
+		var curve_mult = sin(roll_progress * PI) * 1.35 + 0.35
+		velocity.x = roll_direction.x * roll_speed * curve_mult
+		velocity.z = roll_direction.z * roll_speed * curve_mult
 		if roll_timer <= 0.0:
 			is_rolling = false
 			is_invincible = false
 		move_and_slide()
 		return
 
-	# Determine Speed
+	# Determine Target Speed
 	var target_speed := walk_speed
-	var wants_sprint: bool = (Input.is_key_pressed(KEY_SHIFT) or Input.is_action_pressed("sprint")) and input_dir.length_squared() > 0.0
 	
 	if current_weapon == WeaponType.BOW and is_aiming_bow:
 		target_speed = walk_speed * 0.45
 		bow_draw_timer = min(1.0, bow_draw_timer + delta * 1.6)
 		consume_stamina(12.0 * delta)
-		# Aiming zooms camera and aligns player towards camera facing
-		spring_arm.spring_length = lerp(spring_arm.spring_length, 2.4, 8.0 * delta)
 		var aim_yaw := atan2(cam_forward.x, cam_forward.z)
 		visual_root.rotation.y = lerp_angle(visual_root.rotation.y, aim_yaw, 16.0 * delta)
 	else:
-		spring_arm.spring_length = lerp(spring_arm.spring_length, 4.5, 6.0 * delta)
 		if is_blocking:
 			target_speed = walk_speed * 0.45
 		elif is_exhausted:
@@ -347,43 +366,126 @@ func _physics_process(delta: float) -> void:
 		else:
 			target_speed = walk_speed
 
-	# Apply horizontal velocity & animation
-	if move_dir.length() > 0.0:
-		velocity.x = move_dir.x * target_speed
-		velocity.z = move_dir.z * target_speed
-		
-		# Rotate visual model smoothly toward movement direction
-		var target_rot_y := atan2(move_dir.x, move_dir.z)
-		visual_root.rotation.y = lerp_angle(visual_root.rotation.y, target_rot_y, rotation_speed * delta)
-		
-		# Play walking or running animation
-		if not is_attacking and not is_blocking:
-			if wants_sprint and not is_exhausted:
-				play_anim("Running_A")
-			else:
-				play_anim("Walking_A")
+	# Apply Acceleration & Deceleration curves to horizontal velocity
+	var target_vel = move_dir * target_speed
+	var current_h_vel = Vector3(velocity.x, 0.0, velocity.z)
+	
+	if is_on_floor():
+		if move_dir.length_squared() > 0.001:
+			var accel = sprint_accel if (wants_sprint and not is_exhausted) else walk_accel
+			current_h_vel = current_h_vel.move_toward(target_vel, accel * delta)
+		else:
+			current_h_vel = current_h_vel.move_toward(Vector3.ZERO, ground_friction * delta)
 	else:
-		velocity.x = move_toward(velocity.x, 0.0, target_speed * 12.0 * delta)
-		velocity.z = move_toward(velocity.z, 0.0, target_speed * 12.0 * delta)
-		
+		current_h_vel = current_h_vel.move_toward(target_vel, air_control * delta)
+
+	velocity.x = current_h_vel.x
+	velocity.z = current_h_vel.z
+
+	# Smooth Model Rotation toward movement vector
+	if current_h_vel.length() > 0.2 and not (current_weapon == WeaponType.BOW and is_aiming_bow):
+		var target_rot_y := atan2(current_h_vel.x, current_h_vel.z)
+		visual_root.rotation.y = lerp_angle(visual_root.rotation.y, target_rot_y, rotation_speed * delta)
+
+	# Locomotion Animation Blending & Tempo
+	if is_on_floor():
 		if not is_attacking and not is_blocking:
-			play_anim("Idle")
+			var h_speed = current_h_vel.length()
+			if h_speed > 0.25:
+				if wants_sprint and not is_exhausted:
+					var run_tempo = clamp(h_speed / sprint_speed, 0.85, 1.25)
+					play_anim("Running_A", 0.22, run_tempo)
+				else:
+					var walk_tempo = clamp(h_speed / walk_speed, 0.75, 1.2)
+					play_anim("Walking_A", 0.18, walk_tempo)
+			else:
+				play_anim("Idle", 0.28)
+	else:
+		if not is_attacking and not is_blocking:
+			if velocity.y > 0.8:
+				play_anim("Jump_Start", 0.12)
+			else:
+				play_anim("Jump_Idle", 0.2)
 
 	move_and_slide()
 
-func play_anim(anim_name: String) -> void:
+func play_anim(anim_name: String, blend_time: float = 0.2, speed: float = 1.0) -> void:
 	if anim_player != null and anim_player.has_animation(anim_name):
 		if anim_player.current_animation != anim_name:
-			anim_player.play(anim_name)
+			anim_player.play(anim_name, blend_time, speed)
 
 func start_roll(dir: Vector3) -> void:
 	is_rolling = true
 	is_invincible = true
 	roll_timer = roll_duration
 	roll_direction = dir
-	visual_root.rotation.y = atan2(dir.x, dir.z)
-	play_anim("Dodge_Forward")
-	spawn_text("ROLL", Color(0.6, 0.8, 1.0), 0.9)
+	
+	# Calculate directional dodge relative to player's facing direction
+	var char_forward = -visual_root.global_transform.basis.z
+	var char_right = visual_root.global_transform.basis.x
+	char_forward.y = 0.0
+	char_right.y = 0.0
+	char_forward = char_forward.normalized()
+	char_right = char_right.normalized()
+	
+	var fwd_dot = char_forward.dot(dir)
+	var right_dot = char_right.dot(dir)
+	
+	var anim_name = "Dodge_Forward"
+	if fwd_dot > 0.45:
+		anim_name = "Dodge_Forward"
+		visual_root.rotation.y = atan2(dir.x, dir.z)
+	elif fwd_dot < -0.45:
+		anim_name = "Dodge_Backward"
+	elif right_dot > 0.0:
+		anim_name = "Dodge_Right"
+	else:
+		anim_name = "Dodge_Left"
+		
+	play_anim(anim_name, 0.1, 1.25)
+	spawn_text("DODGE", Color(0.6, 0.85, 1.0), 0.95)
+
+func handle_cinematic_camera(delta: float, move_dir: Vector3, wants_sprint: bool) -> void:
+	# 1. Dynamic FOV
+	var target_fov = base_fov
+	if current_weapon == WeaponType.BOW and is_aiming_bow:
+		target_fov = bow_fov
+	elif wants_sprint and not is_exhausted and move_dir.length_squared() > 0.1:
+		target_fov = sprint_fov
+	camera.fov = lerp(camera.fov, target_fov, 4.5 * delta)
+	
+	# 2. Shoulder offset for third-person action RPG framing
+	var target_h_offset = camera_shoulder_offset * 1.25 if (current_weapon == WeaponType.BOW and is_aiming_bow) else camera_shoulder_offset
+	
+	# 3. Dynamic banking / roll tilt when turning while moving
+	var turn_rate = 0.0
+	if move_dir.length_squared() > 0.1:
+		var cam_right = camera_pivot.global_transform.basis.x
+		cam_right.y = 0.0
+		turn_rate = move_dir.dot(cam_right.normalized())
+	var target_roll = -turn_rate * deg_to_rad(1.4)
+	current_camera_roll = lerp(current_camera_roll, target_roll, 5.0 * delta)
+	camera.rotation.z = current_camera_roll
+	
+	# 4. Spring arm distance easing
+	var target_arm_length = 3.8
+	if current_weapon == WeaponType.BOW and is_aiming_bow:
+		target_arm_length = 2.4
+	elif is_blocking:
+		target_arm_length = 3.2
+	elif wants_sprint and move_dir.length_squared() > 0.1:
+		target_arm_length = 4.2
+	spring_arm.spring_length = lerp(spring_arm.spring_length, target_arm_length, 5.0 * delta)
+	
+	# 5. Camera Trauma Shake
+	if camera_shake_trauma > 0.0:
+		camera_shake_trauma = move_toward(camera_shake_trauma, 0.0, delta * 2.2)
+		var shake = camera_shake_trauma * camera_shake_trauma * 0.16
+		camera.h_offset = target_h_offset + randf_range(-shake, shake)
+		camera.v_offset = randf_range(-shake, shake)
+	else:
+		camera.h_offset = lerp(camera.h_offset, target_h_offset, 6.0 * delta)
+		camera.v_offset = lerp(camera.v_offset, 0.0, 6.0 * delta)
 
 func consume_stamina(amount: float) -> void:
 	stamina = max(0.0, stamina - amount)
