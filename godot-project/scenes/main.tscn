@@ -506,4 +506,4 @@ theme_override_constants/margin_bottom = 8
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.9, 0.8, 0.9)
 theme_override_font_sizes/font_size = 13
-text = "WASD: Gerak | SHIFT: Sprint | SPASI: Dodge | KLIK KIRI: Tebas Musuh/Tebang Pohon | KLIK KANAN: Timed Parry | Jamur: Buff Makanan Valheim | Campfire: Rested Buff"
+text = "WASD: Gerak | SHIFT: Sprint | SPASI: Dodge | [1] Pedang [2] Tombak [3] Gada | L-KLIK: Serang | TAHAN L-KLIK: Heavy Strike | R-KLIK: Parry"

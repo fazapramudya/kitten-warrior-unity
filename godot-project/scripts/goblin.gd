@@ -124,15 +124,25 @@ func get_parried() -> void:
 	velocity = -global_transform.basis.z * 7.0 # knock backward
 	spawn_text("STAGGERED!", Color(1.0, 0.8, 0.2), 1.4)
 
-func take_damage(amount: float, knockback: Vector3 = Vector3.ZERO) -> void:
+func take_damage(amount: float, knockback: Vector3 = Vector3.ZERO, damage_type: String = "slashing") -> void:
+	var final_amount := amount
+	var type_prefix := ""
+	
+	if damage_type == "piercing":
+		final_amount *= 1.6 # Goblins take extra piercing damage from spears!
+		type_prefix = "🗡️ PIERCE "
+		
 	# Extra critical damage if staggered
 	if state == State.STAGGERED:
-		amount *= 1.8
-		spawn_text("CRIT! " + str(int(amount)), Color(1.0, 0.3, 0.2), 1.5)
+		final_amount *= 1.8
+		spawn_text("CRIT! " + str(int(final_amount)), Color(1.0, 0.3, 0.2), 1.5)
 	else:
-		spawn_text(str(int(amount)), Color(1.0, 0.9, 0.9), 1.0)
+		if type_prefix != "":
+			spawn_text("%s%d" % [type_prefix, int(final_amount)], Color(0.2, 0.9, 1.0), 1.3)
+		else:
+			spawn_text(str(int(final_amount)), Color(1.0, 0.9, 0.9), 1.0)
 		
-	health -= amount
+	health -= final_amount
 	velocity = knockback
 	if health <= 0.0:
 		die()

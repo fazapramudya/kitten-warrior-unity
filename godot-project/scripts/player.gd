@@ -43,11 +43,21 @@ var is_exhausted: bool = false
 var anim_player: AnimationPlayer = null
 
 # Combat state
+enum WeaponType { SWORD_SHIELD, SPEAR, CLUB }
+var current_weapon: WeaponType = WeaponType.SWORD_SHIELD
+signal weapon_changed(new_weapon_name: String, damage_type: String)
+
 var is_attacking: bool = false
 var attack_timer: float = 0.0
 var attack_duration: float = 0.45
 var combo_step: int = 0
 var combo_reset_timer: float = 0.0
+
+var is_charging_heavy: bool = false
+var charge_timer: float = 0.0
+var max_charge_time: float = 0.38
+var heavy_attack_cost: float = 28.0
+var spear_mesh_instance: Node3D = null
 
 var is_blocking: bool = false
 var parry_timer: float = 0.0
@@ -82,20 +92,79 @@ func setup_knight_model() -> void:
 	if anim_player != null:
 		anim_player.play("Idle")
 		
-	# Setup weapon visibility: show 1H Sword & Round Shield, hide the rest
-	var weapons_to_hide = ["1H_Sword_Offhand", "Badge_Shield", "Rectangle_Shield", "Spike_Shield", "2H_Sword"]
-	for w_name in weapons_to_hide:
-		var node = knight_model.find_child(w_name, true, false)
-		if node != null:
-			node.visible = false
-			
-	var sword = knight_model.find_child("1H_Sword", true, false)
-	if sword != null:
-		sword.visible = true
+	# Build procedural Flint Spear on handslot.r
+	var handslot_r = knight_model.find_child("handslot.r", true, false)
+	if handslot_r != null and spear_mesh_instance == null:
+		spear_mesh_instance = Node3D.new()
+		spear_mesh_instance.name = "Flint_Spear"
+		var shaft = MeshInstance3D.new()
+		var shaft_mesh = CylinderMesh.new()
+		shaft_mesh.top_radius = 0.03
+		shaft_mesh.bottom_radius = 0.03
+		shaft_mesh.height = 1.9
+		var wood_mat = StandardMaterial3D.new()
+		wood_mat.albedo_color = Color(0.48, 0.32, 0.18)
+		shaft.mesh = shaft_mesh
+		shaft.material_override = wood_mat
+		shaft.position = Vector3(0, 0.5, 0)
+		spear_mesh_instance.add_child(shaft)
 		
+		var tip = MeshInstance3D.new()
+		var tip_mesh = CylinderMesh.new()
+		tip_mesh.top_radius = 0.005
+		tip_mesh.bottom_radius = 0.07
+		tip_mesh.height = 0.35
+		var flint_mat = StandardMaterial3D.new()
+		flint_mat.albedo_color = Color(0.28, 0.38, 0.44)
+		flint_mat.metallic = 0.5
+		tip.mesh = tip_mesh
+		tip.material_override = flint_mat
+		tip.position = Vector3(0, 1.55, 0)
+		spear_mesh_instance.add_child(tip)
+		
+		handslot_r.add_child(spear_mesh_instance)
+		spear_mesh_instance.visible = false
+		
+	switch_weapon(WeaponType.SWORD_SHIELD)
+
+func switch_weapon(type: WeaponType) -> void:
+	if is_attacking or is_rolling:
+		return
+	current_weapon = type
+	
+	if knight_model == null:
+		return
+		
+	var sword = knight_model.find_child("1H_Sword", true, false)
 	var shield = knight_model.find_child("Round_Shield", true, false)
-	if shield != null:
-		shield.visible = true
+	var two_h = knight_model.find_child("2H_Sword", true, false)
+	var weapons_to_hide = ["1H_Sword_Offhand", "Badge_Shield", "Rectangle_Shield", "Spike_Shield"]
+	for w in weapons_to_hide:
+		var n = knight_model.find_child(w, true, false)
+		if n != null: n.visible = false
+		
+	match current_weapon:
+		WeaponType.SWORD_SHIELD:
+			if sword: sword.visible = true
+			if shield: shield.visible = true
+			if two_h: two_h.visible = false
+			if spear_mesh_instance: spear_mesh_instance.visible = false
+			spawn_text("⚔️ SWORD & SHIELD (Slashing)", Color(0.9, 0.9, 1.0), 1.2)
+			weapon_changed.emit("Sword & Shield", "Slashing")
+		WeaponType.SPEAR:
+			if sword: sword.visible = false
+			if shield: shield.visible = false
+			if two_h: two_h.visible = false
+			if spear_mesh_instance: spear_mesh_instance.visible = true
+			spawn_text("🗡️ FLINT SPEAR (Piercing)", Color(0.3, 0.9, 1.0), 1.2)
+			weapon_changed.emit("Flint Spear", "Piercing")
+		WeaponType.CLUB:
+			if sword: sword.visible = false
+			if shield: shield.visible = false
+			if two_h: two_h.visible = true
+			if spear_mesh_instance: spear_mesh_instance.visible = false
+			spawn_text("🔨 WAR CLUB (Blunt)", Color(1.0, 0.75, 0.2), 1.2)
+			weapon_changed.emit("War Club", "Blunt")
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -103,19 +172,35 @@ func _unhandled_input(event: InputEvent) -> void:
 		spring_arm.rotate_x(-event.relative.y * mouse_sensitivity)
 		spring_arm.rotation.x = clamp(spring_arm.rotation.x, deg_to_rad(-65.0), deg_to_rad(45.0))
 	
-	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-		else:
-			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	if event is InputEventKey and event.pressed:
+		if event.keycode == KEY_ESCAPE:
+			if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			else:
+				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		elif event.keycode == KEY_1:
+			switch_weapon(WeaponType.SWORD_SHIELD)
+		elif event.keycode == KEY_2:
+			switch_weapon(WeaponType.SPEAR)
+		elif event.keycode == KEY_3:
+			switch_weapon(WeaponType.CLUB)
 			
-	if event is InputEventMouseButton and event.pressed:
-		if Input.mouse_mode == Input.MOUSE_MODE_VISIBLE:
-			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-			return
-			
+	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
-			try_attack()
+			if event.pressed:
+				if Input.mouse_mode == Input.MOUSE_MODE_VISIBLE:
+					Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+					return
+				is_charging_heavy = true
+				charge_timer = 0.0
+			else:
+				if is_charging_heavy:
+					if charge_timer >= max_charge_time:
+						try_heavy_attack()
+					else:
+						try_attack()
+					is_charging_heavy = false
+					charge_timer = 0.0
 
 func _physics_process(delta: float) -> void:
 	handle_stamina(delta)
@@ -298,12 +383,18 @@ func handle_stamina(delta: float) -> void:
 				is_exhausted = false
 
 func try_attack() -> void:
-	if is_attacking or is_rolling or is_exhausted or stamina < attack_stamina_cost:
+	var stam_cost := attack_stamina_cost
+	if current_weapon == WeaponType.SPEAR:
+		stam_cost = 9.0
+	elif current_weapon == WeaponType.CLUB:
+		stam_cost = 16.0
+
+	if is_attacking or is_rolling or is_exhausted or stamina < stam_cost:
 		return
 		
 	is_attacking = true
 	attack_timer = attack_duration
-	consume_stamina(attack_stamina_cost)
+	consume_stamina(stam_cost)
 	
 	combo_step = (combo_step % 3) + 1
 	combo_reset_timer = 0.85
@@ -311,16 +402,52 @@ func try_attack() -> void:
 	var damage := 26.0
 	var knock_force := 9.0
 	var anim_to_play := "1H_Melee_Attack_Slice_Horizontal"
+	var dmg_type := "slashing"
 	
-	if combo_step == 2:
-		damage = 36.0
-		knock_force = 12.0
-		anim_to_play = "1H_Melee_Attack_Slice_Diagonal"
-	elif combo_step == 3:
-		damage = 56.0
-		knock_force = 19.0
-		anim_to_play = "1H_Melee_Attack_Chop"
-		add_camera_shake(0.35)
+	match current_weapon:
+		WeaponType.SWORD_SHIELD:
+			dmg_type = "slashing"
+			if combo_step == 1:
+				damage = 26.0
+				knock_force = 9.0
+				anim_to_play = "1H_Melee_Attack_Slice_Horizontal"
+			elif combo_step == 2:
+				damage = 36.0
+				knock_force = 12.0
+				anim_to_play = "1H_Melee_Attack_Slice_Diagonal"
+			elif combo_step == 3:
+				damage = 56.0
+				knock_force = 19.0
+				anim_to_play = "1H_Melee_Attack_Chop"
+				add_camera_shake(0.35)
+		WeaponType.SPEAR:
+			dmg_type = "piercing"
+			anim_to_play = "1H_Melee_Attack_Stab"
+			if combo_step == 1:
+				damage = 24.0
+				knock_force = 10.0
+			elif combo_step == 2:
+				damage = 34.0
+				knock_force = 14.0
+			elif combo_step == 3:
+				damage = 52.0
+				knock_force = 20.0
+				add_camera_shake(0.3)
+		WeaponType.CLUB:
+			dmg_type = "blunt"
+			if combo_step == 1:
+				damage = 34.0
+				knock_force = 15.0
+				anim_to_play = "2H_Melee_Attack_Chop"
+			elif combo_step == 2:
+				damage = 48.0
+				knock_force = 18.0
+				anim_to_play = "2H_Melee_Attack_Slice"
+			elif combo_step == 3:
+				damage = 74.0
+				knock_force = 24.0
+				anim_to_play = "2H_Melee_Attack_Spin"
+				add_camera_shake(0.4)
 	
 	play_anim(anim_to_play)
 	
@@ -330,13 +457,68 @@ func try_attack() -> void:
 		if body != self and body.has_method("take_damage"):
 			var knockback_dir := (body.global_position - global_position).normalized()
 			knockback_dir.y = 0.35
-			body.take_damage(damage, knockback_dir * knock_force)
+			body.take_damage(damage, knockback_dir * knock_force, dmg_type)
 			hit_count += 1
 			
 	if hit_count > 0:
 		add_camera_shake(0.18)
 
+func try_heavy_attack() -> void:
+	if is_attacking or is_rolling or is_exhausted or stamina < heavy_attack_cost:
+		try_attack()
+		return
+		
+	is_attacking = true
+	attack_timer = 0.65
+	consume_stamina(heavy_attack_cost)
+	
+	var damage := 78.0
+	var knock_force := 26.0
+	var dmg_type := "slashing"
+	var anim_to_play := "2H_Melee_Attack_Chop"
+	
+	match current_weapon:
+		WeaponType.SWORD_SHIELD:
+			damage = 84.0
+			dmg_type = "slashing"
+			anim_to_play = "1H_Melee_Attack_Chop"
+			spawn_text("💥 HEAVY SLASH!", Color(1.0, 0.5, 0.2), 1.5)
+		WeaponType.SPEAR:
+			damage = 92.0
+			dmg_type = "piercing"
+			anim_to_play = "1H_Melee_Attack_Stab"
+			knock_force = 26.0
+			spawn_text("💥 HEAVY THRUST!", Color(0.2, 0.85, 1.0), 1.5)
+		WeaponType.CLUB:
+			damage = 112.0
+			dmg_type = "blunt"
+			anim_to_play = "2H_Melee_Attack_Spin"
+			knock_force = 32.0
+			spawn_text("💥 CRUSHING SLAM!", Color(1.0, 0.85, 0.2), 1.7)
+			
+	play_anim(anim_to_play)
+	add_camera_shake(0.45)
+	
+	var hit_count := 0
+	for body in attack_area.get_overlapping_bodies():
+		if body != self and body.has_method("take_damage"):
+			var knockback_dir := (body.global_position - global_position).normalized()
+			knockback_dir.y = 0.45
+			if body.has_method("apply_parry_stagger"):
+				body.apply_parry_stagger(32.0)
+			body.take_damage(damage, knockback_dir * knock_force, dmg_type)
+			hit_count += 1
+			
+	if hit_count > 0:
+		add_camera_shake(0.35)
+
 func handle_combat(delta: float) -> void:
+	if is_charging_heavy:
+		charge_timer += delta
+		if charge_timer >= max_charge_time:
+			# Flash particle or feedback
+			pass
+
 	if combo_reset_timer > 0.0:
 		combo_reset_timer -= delta
 		if combo_reset_timer <= 0.0:

@@ -20,13 +20,27 @@ var day_cycle_time: float = 0.0
 var day_cycle_length: float = 180.0 # 3 minutes full cycle
 var is_night: bool = false
 
+var active_weapon_name: String = "Sword & Shield"
+var active_damage_type: String = "Slashing"
+
 func _ready() -> void:
 	if player:
 		player.health_changed.connect(_on_health_changed)
 		player.stamina_changed.connect(_on_stamina_changed)
+		if player.has_signal("weapon_changed"):
+			player.weapon_changed.connect(_on_weapon_changed)
 		_on_health_changed(player.health, player.max_health)
 		_on_stamina_changed(player.stamina, player.max_stamina)
 	update_kill_ui()
+
+func _on_weapon_changed(w_name: String, dmg_type: String) -> void:
+	active_weapon_name = w_name
+	active_damage_type = dmg_type
+	update_kill_ui()
+
+func update_kill_ui() -> void:
+	if kill_label:
+		kill_label.text = "⚔️ Kills: %d  |  Equipped: %s [%s]" % [kills, active_weapon_name, active_damage_type]
 
 func _process(delta: float) -> void:
 	day_cycle_time += delta
@@ -113,10 +127,6 @@ func _on_stamina_changed(curr: float, max_val: float) -> void:
 func on_enemy_killed() -> void:
 	kills += 1
 	update_kill_ui()
-
-func update_kill_ui() -> void:
-	if kill_label:
-		kill_label.text = "⚔️ Kills: " + str(kills)
 
 func spawn_monster_around_player() -> void:
 	if player == null:

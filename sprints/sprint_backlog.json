@@ -56,13 +56,48 @@
     {
       "id": 2,
       "title": "Deep Tactical Combat & Weapon Arsenal",
-      "status": "planned",
+      "status": "completed",
       "pillars": [
         "Heavy attack charged swing with high stamina cost and massive stagger",
-        "Flint Spear and Wooden Club weapon switching",
-        "Damage types: Slashing, Blunt, and Piercing with elemental vulnerabilities",
-        "Bow and arrow ranged hunting mechanics"
-      ]
+        "Flint Spear and War Club weapon switching [1, 2, 3]",
+        "Damage types: Slashing, Blunt, and Piercing with elemental vulnerabilities (Blunt vs Skeletons, Pierce vs Goblins)",
+        "Choppable tree wood damage scaling by weapon type (Slashing axes/swords chop 1.5x, spears pierce poorly 0.4x)"
+      ],
+      "assignments": {
+        "worker-1-gameplay": {
+          "role": "Lead Gameplay & Character Engineer",
+          "tasks": [
+            "Add weapon switching enum (Sword & Shield, Spear, Club) with visual mesh toggle and key shortcuts [1, 2, 3]",
+            "Implement Heavy Charged Attack when holding Left Mouse Button (0.38s charge, 28 stamina cost, 84-112 damage)",
+            "Propagate damage type (slashing, piercing, blunt) to targets with camera shake and visual popup feedback"
+          ]
+        },
+        "worker-2-combatai": {
+          "role": "Combat & Monster AI Specialist",
+          "tasks": [
+            "Implement Skeleton crush vulnerability (+75% damage and instant stagger buildup from blunt war club)",
+            "Implement Goblin pierce vulnerability (+60% damage from spear thrusts)",
+            "Implement Slime damage reactions (slashing slices easily, blunt knocks back and bounces)"
+          ]
+        },
+        "worker-3-systems": {
+          "role": "Systems & Data Architect",
+          "tasks": [
+            "Update ChoppableTree to take weapon damage type into account (Slashing chops wood 1.5x fast)",
+            "Update Main scene UI HUD to display currently equipped weapon and active damage type",
+            "Update Three.js Web Prototype at port 8080 with 3-weapon switching and heavy charged attack"
+          ]
+        },
+        "worker-4-qa-reviewer": {
+          "role": "Code Reviewer & Integration Specialist",
+          "tasks": [
+            "Audit GDScript syntax and node references across player.gd, skeleton.gd, goblin.gd, slime.gd, and choppable_tree.gd",
+            "Commit code changes to git main branch and push to GitHub remote",
+            "Monitor GitHub Actions CI pipeline godot-build.yml until clean Windows x64 build",
+            "Deploy latest build to KittenWarrior-Godot4-Windows-x64.zip and restart web services"
+          ]
+        }
+      }
     },
     {
       "id": 3,

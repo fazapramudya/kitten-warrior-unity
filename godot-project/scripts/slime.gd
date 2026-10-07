@@ -79,13 +79,25 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
-func take_damage(amount: float, knockback: Vector3 = Vector3.ZERO) -> void:
+func take_damage(amount: float, knockback: Vector3 = Vector3.ZERO, damage_type: String = "slashing") -> void:
 	if is_dead:
 		return
-	health -= amount
+	var final_amount := amount
+	var prefix := ""
+	if damage_type == "slashing":
+		final_amount *= 1.4 # Slimes slice easily
+		prefix = "SLASH "
+	elif damage_type == "blunt":
+		knockback *= 1.6 # Slimes bounce away when hammered
+		prefix = "BOUNCE "
+		
+	health -= final_amount
 	velocity = knockback
 	
-	spawn_text(str(int(amount)), Color(0.9, 1.0, 0.4), 1.0)
+	if prefix != "":
+		spawn_text("%s%d" % [prefix, int(final_amount)], Color(0.9, 1.0, 0.4), 1.2)
+	else:
+		spawn_text(str(int(final_amount)), Color(0.9, 1.0, 0.4), 1.0)
 	
 	if health <= 0.0:
 		die()

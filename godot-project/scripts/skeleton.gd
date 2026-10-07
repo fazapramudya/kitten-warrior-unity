@@ -130,19 +130,33 @@ func trigger_stagger() -> void:
 	if anim_player != null and anim_player.has_animation("Hit_A"):
 		anim_player.play("Hit_A")
 
-func take_damage(amount: float, knockback: Vector3 = Vector3.ZERO) -> void:
+func take_damage(amount: float, knockback: Vector3 = Vector3.ZERO, damage_type: String = "slashing") -> void:
 	if is_dead:
 		return
 		
 	var final_dmg := amount
-	if is_staggered:
-		final_dmg *= 2.0 # Valheim 2x Critical Damage window!
-		spawn_text("CRIT %d!" % int(final_dmg), Color(1.0, 0.3, 0.1), 1.6)
+	var type_text := ""
+	
+	if damage_type == "blunt":
+		final_dmg *= 1.75 # Skeletons are weak to blunt crushing damage!
+		stagger_meter += amount * 0.95
+		type_text = "🔨 CRUSH "
+	elif damage_type == "piercing":
+		final_dmg *= 0.75 # Skeletons resist piercing
+		type_text = "RESIST "
 	else:
 		stagger_meter += amount * 0.45
+		
+	if is_staggered:
+		final_dmg *= 2.0 # Valheim 2x Critical Damage window!
+		spawn_text("⚡ CRIT %d!" % int(final_dmg), Color(1.0, 0.3, 0.1), 1.6)
+	else:
 		if stagger_meter >= max_stagger:
 			trigger_stagger()
-		spawn_text(str(int(final_dmg)), Color(1.0, 0.85, 0.3), 1.1)
+		if type_text != "":
+			spawn_text("%s%d" % [type_text, int(final_dmg)], Color(1.0, 0.75, 0.2), 1.3)
+		else:
+			spawn_text(str(int(final_dmg)), Color(1.0, 0.85, 0.3), 1.1)
 		
 	health -= final_dmg
 	velocity = knockback

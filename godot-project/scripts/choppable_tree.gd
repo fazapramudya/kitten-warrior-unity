@@ -16,17 +16,29 @@ func _ready() -> void:
 	original_rotation = rotation
 	add_to_group("choppable_trees")
 
-func take_damage(amount: float, hit_dir: Vector3 = Vector3.ZERO) -> void:
+func take_damage(amount: float, hit_dir: Vector3 = Vector3.ZERO, damage_type: String = "slashing") -> void:
 	if is_felled:
 		return
 		
-	health -= amount
+	var final_amount := amount
+	var text_prefix := "🌲 -"
+	if damage_type == "slashing":
+		final_amount *= 1.5 # Slashing blades and axes chop trees efficiently!
+		text_prefix = "🪓 CHOP -"
+	elif damage_type == "piercing":
+		final_amount *= 0.4 # Spears poke poorly into wood
+		text_prefix = "POKE -"
+	elif damage_type == "blunt":
+		final_amount *= 1.0
+		text_prefix = "🔨 CRACK -"
+		
+	health -= final_amount
 	
 	# Spawn floating hit indicator
 	var ft = floating_text_scene.instantiate()
 	get_parent().add_child(ft)
 	ft.global_position = global_position + Vector3(0, 2.5, 0)
-	ft.set_text("🌲 -%d (Wood)" % int(amount), Color(0.85, 0.65, 0.4))
+	ft.set_text("%s%d (Wood)" % [text_prefix, int(final_amount)], Color(0.85, 0.65, 0.4))
 	
 	# Tree wobble effect
 	var tween = create_tween()
